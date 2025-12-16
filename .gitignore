@@ -40,6 +40,14 @@ android/app/src/main/assets/
 *.keystore
 keystore.properties
 
+# Firebase / Google Services (contains API keys)
+google-services.json
+GoogleService-Info.plist
+
+# Secrets
+*.secret
+secrets.json
+
 # =========================
 # OS / IDE
 # =========================
