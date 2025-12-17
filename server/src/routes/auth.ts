@@ -140,7 +140,7 @@ export async function authRoutes(app: FastifyInstance) {
         const body = loginSchema.parse(request.body);
 
         const userResult = await db.query(
-            `SELECT id, username, email, password_hash, timezone, platform, tracking_status, device_id
+            `SELECT id, username, email, password_hash, timezone, platform, tracking_status, device_id, role
        FROM users WHERE email = $1`,
             [body.email]
         );
@@ -186,6 +186,7 @@ export async function authRoutes(app: FastifyInstance) {
                 timezone: user.timezone,
                 platform: user.platform,
                 trackingStatus: user.tracking_status,
+                role: user.role || 'user',
             },
             accessToken,
             refreshToken,

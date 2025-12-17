@@ -199,11 +199,23 @@ export async function groupRoutes(app: FastifyInstance) {
     });
 
     // Get group leaderboard
+    // Privacy: Returns scores from the last snapshot (every 4 hours) to prevent real-time tracking
     app.get('/:id/leaderboard', {
         preHandler: [(app as any).authenticate],
     }, async (request, reply) => {
         const userId = (request as any).user.id;
         const { id } = request.params as { id: string };
+
+        // Calculate the current 4-hour window
+        const REFRESH_INTERVAL_HOURS = 4;
+        const now = new Date();
+        const currentHour = now.getUTCHours();
+        const windowStart = Math.floor(currentHour / REFRESH_INTERVAL_HOURS) * REFRESH_INTERVAL_HOURS;
+        const snapshotTime = new Date(now);
+        snapshotTime.setUTCHours(windowStart, 0, 0, 0);
+
+        const nextUpdate = new Date(snapshotTime);
+        nextUpdate.setUTCHours(nextUpdate.getUTCHours() + REFRESH_INTERVAL_HOURS);
 
         // Verify membership
         const memberResult = await db.query(
@@ -234,15 +246,19 @@ export async function groupRoutes(app: FastifyInstance) {
             [id, weekStart]
         );
 
-        return result.rows.map((row, index) => ({
-            rank: index + 1,
-            userId: row.user_id,
-            username: row.username,
-            trackingStatus: row.tracking_status,
-            totalPoints: Number(row.total_points),
-            streakCount: row.streak_count,
-            longestStreak: row.longest_streak,
-            isYou: row.user_id === userId,
-        }));
+        return {
+            leaderboard: result.rows.map((row, index) => ({
+                rank: index + 1,
+                userId: row.user_id,
+                username: row.username,
+                trackingStatus: row.tracking_status,
+                totalPoints: Number(row.total_points),
+                streakCount: row.streak_count,
+                longestStreak: row.longest_streak,
+                isYou: row.user_id === userId,
+            })),
+            lastUpdated: snapshotTime.toISOString(),
+            nextUpdateAt: nextUpdate.toISOString(),
+        };
     });
 }

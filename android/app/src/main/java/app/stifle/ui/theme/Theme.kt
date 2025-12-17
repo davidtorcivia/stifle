@@ -27,24 +27,24 @@ import androidx.core.view.WindowCompat
 // COLOR PALETTE - Warm Earth Tones
 // ============================================================================
 
-// Primary: Warm terracotta - inviting but not exciting
-private val WarmTerracotta = Color(0xFFB5674E)
-private val WarmTerracottaLight = Color(0xFFD4907A)
-private val WarmTerracottaDark = Color(0xFF8A4A35)
+// Primary: Deep Russet - earthy, sophisticated, organic
+private val WarmTerracotta = Color(0xFF9E4825)
+private val WarmTerracottaLight = Color(0xFFC88A75) 
+private val WarmTerracottaDark = Color(0xFF5E2C18)
 
-// Neutral: Warm grays with slight tan undertone
-private val WarmWhite = Color(0xFFFAF8F5)
-private val WarmGray50 = Color(0xFFF5F2EE)
-private val WarmGray100 = Color(0xFFEAE6E0)
-private val WarmGray200 = Color(0xFFD5CFC5)
-private val WarmGray300 = Color(0xFFB8B0A3)
-private val WarmGray400 = Color(0xFF9A9186)
-private val WarmGray500 = Color(0xFF7D756A)
-private val WarmGray600 = Color(0xFF615A51)
-private val WarmGray700 = Color(0xFF4A453E)
-private val WarmGray800 = Color(0xFF332F2A)
-private val WarmGray900 = Color(0xFF1F1C19)
-private val WarmBlack = Color(0xFF121110)
+// Neutral: Warm Stone grays (less yellow than before)
+private val WarmWhite = Color(0xFFF9F8F6) // Very subtle paper
+private val WarmGray50 = Color(0xFFF2F0EC)
+private val WarmGray100 = Color(0xFFE6E2DC)
+private val WarmGray200 = Color(0xFFCDC8C0)
+private val WarmGray300 = Color(0xFFB3ADA3)
+private val WarmGray400 = Color(0xFF99938A)
+private val WarmGray500 = Color(0xFF807A72)
+private val WarmGray600 = Color(0xFF66615B)
+private val WarmGray700 = Color(0xFF4D4945)
+private val WarmGray800 = Color(0xFF33302E)
+private val WarmGray900 = Color(0xFF1A1817) // Nearly black
+private val WarmBlack = Color(0xFF0D0C0B)
 
 // Accent: Muted olive for success states (streak active)
 private val MutedOlive = Color(0xFF6B7D5A)
@@ -145,9 +145,15 @@ private val DarkColorScheme = darkColorScheme(
 
 @Composable
 fun StifleTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
+    themeMode: String = "system",
     content: @Composable () -> Unit
 ) {
+    val darkTheme = when (themeMode) {
+        "light" -> false
+        "dark" -> true
+        else -> isSystemInDarkTheme()
+    }
+    
     // Use our custom colors, no dynamic color (keeps warm palette consistent)
     val colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme
     
@@ -156,7 +162,9 @@ fun StifleTheme(
         SideEffect {
             val window = (view.context as Activity).window
             // Transparent status/nav bars for edge-to-edge
+            @Suppress("DEPRECATION")
             window.statusBarColor = Color.Transparent.toArgb()
+            @Suppress("DEPRECATION")
             window.navigationBarColor = Color.Transparent.toArgb()
             
             val insetsController = WindowCompat.getInsetsController(window, view)

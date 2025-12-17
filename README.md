@@ -1,113 +1,87 @@
 # Stifle
 
-A mobile app that gamifies reduced screen time through social competition. Earn points for keeping your phone locked, compete with friends on weekly leaderboards.
+> **"Stifle your phone. Unleash yourself."**
 
-## Project Structure
+Stifle is a privacy-first mobile app that gamifies digital wellbeing through social competition and personal growth. Earn points for keeping your phone locked, compete with friends, and beat your own "ghost" from last week.
+
+## 🚀 Alpha Release
+
+The Alpha release focuses on the core "Loop" of the application:
+1.  **Lock & Earn**: Accumulate points for every minute your phone is locked (min. 10 mins).
+2.  **Weekly Turnovers**: Every Monday at 9 AM, your score resets.
+3.  **Ghost Mode**: Compete against your previous week's performance.
+4.  **Social Leaderboards**: See how you stack up against friends and groups.
+
+## ✨ Key Features
+
+-   **Privacy First**: We only track *lock events*. We never monitor which apps you use or what you do on your phone.
+-   **Robust Tracking**: Uses a custom Accessibility Service to ensure sessions are tracked accurately even on aggressive battery-saving devices.
+-   **Premium Onboarding**: A smooth, animated introduction to the Stifle philosophy.
+-   **Weekly Notifications**: Smart local-timezone notifications to deliver your weekly summary and rank.
+-   **Group & Friend Leaderboards**: Create invite-only groups for close-knit competition.
+
+## 🛠 Project Structure
 
 ```
 stifle/
-├── server/          # Node.js/Fastify backend
-├── android/         # Kotlin/Compose app
+├── server/          # Node.js (Fastify/TypeScript) backend
+├── android/         # Native Android (Kotlin/Jetpack Compose)
+├── admin/           # React Admin Panel (Vite)
 ├── docker-compose.yml
 └── README.md
 ```
 
-## Quick Start (Development)
+## ⚙️ Tech Stack
 
-### Prerequisites
-- Node.js 20+
-- Docker & Docker Compose
-- Android Studio (for Android development)
+### Backend
+-   **Runtime**: Node.js 20+
+-   **Framework**: Fastify
+-   **Database**: PostgreSQL (Data), Redis (Queue/Cache)
+-   **Queue System**: BullMQ (for weekly summaries & notifications)
+-   **Push Notifications**: Firebase Cloud Messaging (FCM)
 
-### 1. Start Backend
+### Android
+-   **UI**: Jetpack Compose
+-   **Architecture**: MVVM
+-   **Local Storage**: DataStore (Preferences), Room (Events)
+-   **Background Work**: WorkManager (Sync), AccessibilityService (Tracking)
+
+## 🏃‍♂️ Quick Start
+
+### 1. Backend Setup
 
 ```bash
-# Start Postgres + Redis
+# Start Infrastructure (Postgres + Redis)
 docker-compose up -d
 
-# Install dependencies & setup database
+# Install & Setup Server
 cd server
 npm install
-npm run setup    # Runs migrations + creates admin user + invite codes
-
-# Start dev server
-npm run dev
+npm run setup    # Runs migrations + seeds DB + creates admin user
+npm run dev      # Starts server on port 3000
 ```
 
-The setup command will output:
-- Admin credentials (default: `admin@stifle.app` / `admin123`)
-- 5 invite codes you can use to register new users
-- A sample group invite code
+### 2. Android Setup
 
-### 2. Run Tests
+1.  Open `android/` in Android Studio.
+2.  Sync Gradle.
+3.  **Important**: Ensure your emulator/device can reach the server.
+    -   Emulator: auto-configured for `10.0.2.2:3000`.
+    -   Physical Device: Update `API_BASE_URL` in `app/build.gradle.kts`.
+4.  Run `gradlew installDebug`.
 
-```bash
-cd server
-npm run test        # Run all tests
-npm run test:watch  # Watch mode
-npm run typecheck   # TypeScript check
-```
+### 3. Verification
 
-### 3. Android App
+-   **Onboarding**: Launch the app. You should see the "Stifle your phone" welcome sequence.
+-   **Permissions**: Accept Accessibility (for tracking) and Notifications (for weekly summaries).
+-   **Ghost Mode**: Complete one week of tracking to see your Ghost stats!
 
-Open the `android/` folder in Android Studio and run on emulator/device.
+## 🔒 Security
 
-**For emulator**: The app is pre-configured to connect to `http://10.0.2.2:3000` (Android emulator's localhost).
-
-**For physical device**: Update `API_BASE_URL` in `app/build.gradle.kts` to your dev machine's IP.
-
-## API Endpoints
-
-```
-POST /auth/register     - Register with invite code
-POST /auth/login        - Login
-POST /auth/refresh      - Refresh tokens
-POST /auth/logout       - Logout
-
-POST /events/sync       - Sync lock/unlock events
-GET  /events/current    - Get current streak info
-
-GET  /users/me          - Get profile + weekly score
-PUT  /users/me          - Update profile
-PUT  /users/me/tracking-status - Update tracking status
-POST /users/me/invites  - Create invite codes
-GET  /users/me/invites  - List invite codes
-
-POST /groups            - Create group
-GET  /groups            - List your groups
-GET  /groups/:id        - Get group details
-POST /groups/join       - Join by invite code
-DELETE /groups/:id/leave - Leave group
-GET  /groups/:id/leaderboard - Weekly leaderboard
-
-GET  /health            - Health check
-```
-
-## NPM Scripts
-
-| Command | Description |
-|---------|-------------|
-| `npm run dev` | Start dev server with hot reload |
-| `npm run setup` | Run migrations + seed database |
-| `npm run migrate` | Run database migrations only |
-| `npm run seed` | Seed database only |
-| `npm run test` | Run tests |
-| `npm run typecheck` | TypeScript type check |
-| `npm run build` | Build for production |
-
-## Tech Stack
-
-**Backend:** Node.js, Fastify, TypeScript, PostgreSQL, Redis, BullMQ  
-**Android:** Kotlin, Jetpack Compose, Room, WorkManager
-
-## Security Features
-
-- JWT with refresh token rotation
-- Encrypted token storage on Android (AES-GCM)
-- HTTPS enforcement with certificate pinning ready
-- Invite-only registration
-- Single device per user
+-   **JWT Auth**: Secure access with refresh token rotation.
+-   **Encrypted Storage**: Sensitive tokens stored via Android Keystore.
+-   **Invite-Only**: Registration protected by invite codes to maintain community quality during Alpha.
 
 ## License
 
-MIT
+Polyform Noncommercial

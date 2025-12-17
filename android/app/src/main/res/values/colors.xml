@@ -2,6 +2,6 @@
 <resources>
     <!-- Warm terracotta for notification accent -->
     <color name="notification_color">#B5674E</color>
-    <!-- Warm white background for launcher icon -->
-    <color name="ic_launcher_background">#FAF8F5</color>
+    <!-- Cream white background for launcher icon -->
+    <color name="ic_launcher_background">#FFFEF5</color>
 </resources>

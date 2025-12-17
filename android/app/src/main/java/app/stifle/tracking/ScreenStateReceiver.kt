@@ -45,6 +45,8 @@ class ScreenStateReceiver : BroadcastReceiver() {
                 scope.launch {
                     try {
                         eventRepository.recordLock("automatic")
+                        // Also schedule sync on lock for more reliable score updates
+                        SyncWorker.enqueue(context)
                     } catch (e: Exception) {
                         android.util.Log.e("ScreenStateReceiver", "Failed to record lock", e)
                     }

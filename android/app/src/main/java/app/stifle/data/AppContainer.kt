@@ -5,8 +5,10 @@ import app.stifle.data.local.AppDatabase
 import app.stifle.data.local.TokenManager
 import app.stifle.data.repository.AuthRepository
 import app.stifle.data.repository.EventRepository
+import app.stifle.data.repository.FriendsRepository
 import app.stifle.data.repository.GroupRepository
 import app.stifle.network.ApiClient
+import app.stifle.network.FriendsApi
 import app.stifle.network.UsersApi
 
 /**
@@ -17,7 +19,9 @@ interface AppContainer {
     val authRepository: AuthRepository
     val eventRepository: EventRepository
     val groupRepository: GroupRepository
+    val friendsRepository: FriendsRepository
     val usersApi: UsersApi
+    val friendsApi: FriendsApi
 }
 
 /**
@@ -54,8 +58,15 @@ class AppContainerImpl(private val context: Context) : AppContainer {
         GroupRepository(apiClient.groupsApi)
     }
     
+    override val friendsRepository: FriendsRepository by lazy {
+        FriendsRepository(apiClient.friendsApi)
+    }
+    
     override val usersApi: UsersApi by lazy {
         apiClient.usersApi
     }
+    
+    override val friendsApi: FriendsApi by lazy {
+        apiClient.friendsApi
+    }
 }
-

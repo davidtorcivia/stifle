@@ -45,7 +45,8 @@ data class UserInfo(
     val email: String,
     val timezone: String,
     val platform: String,
-    val trackingStatus: String
+    val trackingStatus: String,
+    val isDiscoverable: Boolean = true // Added field
 )
 
 interface AuthApi {
@@ -112,7 +113,8 @@ data class UserProfile(
     val platform: String,
     val trackingStatus: String,
     val createdAt: String,
-    val weeklyScore: WeeklyScore
+    val weeklyScore: WeeklyScore,
+    val isDiscoverable: Boolean = true // Added field
 )
 
 data class WeeklyScore(
@@ -123,6 +125,12 @@ data class WeeklyScore(
 
 data class UpdateTrackingRequest(
     val status: String
+)
+
+data class UpdateProfileRequest(
+    val username: String? = null,
+    val timezone: String? = null,
+    val isDiscoverable: Boolean? = null
 )
 
 data class InviteCode(
@@ -169,6 +177,50 @@ data class LastStreak(
     val endedAt: String
 )
 
+// Weekly Summary for ghost comparisons and turnovers
+data class WeeklySummary(
+    val thisWeek: ThisWeekStats,
+    val vsLastWeek: VsLastWeek? = null,
+    val vsFriendsAvg: VsFriendsAvg? = null,
+    val vsPersonalBest: VsPersonalBest? = null,
+    val vsPersonalAvg: VsPersonalAvg? = null,
+    val trend: TrendInfo? = null
+)
+
+data class ThisWeekStats(
+    val points: Double,
+    val streaks: Int,
+    val rank: Int,
+    val totalParticipants: Int
+)
+
+data class VsLastWeek(
+    val pointsDiff: Double,
+    val percentDiff: Double,
+    val wasImprovement: Boolean
+)
+
+data class VsFriendsAvg(
+    val percentDiff: Double,
+    val isAboveAvg: Boolean
+)
+
+data class VsPersonalBest(
+    val bestPoints: Double,
+    val bestWeek: String?,
+    val isBeat: Boolean,
+    val pointsAway: Double
+)
+
+data class VsPersonalAvg(
+    val avgPoints: Double,
+    val percentDiff: Double
+)
+
+data class TrendInfo(
+    val weeksImproving: Int
+)
+
 interface UsersApi {
     @GET("users/me")
     suspend fun getMe(): Response<UserProfile>
@@ -176,8 +228,11 @@ interface UsersApi {
     @GET("users/me/stats")
     suspend fun getStats(): Response<UserStats>
     
+    @GET("users/me/weekly-summary")
+    suspend fun getWeeklySummary(): Response<WeeklySummary>
+    
     @PUT("users/me")
-    suspend fun updateProfile(@Body request: Map<String, String>): Response<Unit>
+    suspend fun updateProfile(@Body request: UpdateProfileRequest): Response<Unit>
     
     @retrofit2.http.DELETE("users/me")
     suspend fun deleteAccount(): Response<Unit>
@@ -199,6 +254,12 @@ interface UsersApi {
     
     @PUT("users/me/temptation")
     suspend fun updateTemptationSettings(@Body request: UpdateTemptationRequest): Response<Unit>
+    
+    @PUT("users/me/password")
+    suspend fun changePassword(@Body request: Map<String, String>): Response<Unit>
+    
+    @PUT("users/me/email")
+    suspend fun changeEmail(@Body request: Map<String, String>): Response<Unit>
 }
 
 // === Groups API ===
@@ -241,6 +302,12 @@ data class LeaderboardEntry(
     val isYou: Boolean
 )
 
+data class GroupLeaderboardResponse(
+    val leaderboard: List<LeaderboardEntry>,
+    val lastUpdated: String,
+    val nextUpdateAt: String
+)
+
 interface GroupsApi {
     @POST("groups")
     suspend fun createGroup(@Body request: CreateGroupRequest): Response<Group>
@@ -252,5 +319,126 @@ interface GroupsApi {
     suspend fun joinGroup(@Body request: JoinGroupRequest): Response<JoinGroupResponse>
     
     @retrofit2.http.GET("groups/{id}/leaderboard")
-    suspend fun getLeaderboard(@retrofit2.http.Path("id") groupId: String): Response<List<LeaderboardEntry>>
+    suspend fun getLeaderboard(@retrofit2.http.Path("id") groupId: String): Response<GroupLeaderboardResponse>
+}
+
+// === Friends API ===
+
+data class FriendSearchResult(
+    val id: String,
+    val username: String,
+    val platform: String,
+    val friendshipStatus: String?,
+    val requestDirection: String?
+)
+
+data class FriendSearchResponse(
+    val users: List<FriendSearchResult>
+)
+
+data class Friend(
+    val id: String,
+    val username: String,
+    val platform: String,
+    val friendsSince: String
+)
+
+data class FriendsListResponse(
+    val friends: List<Friend>
+)
+
+data class FriendRequest(
+    val id: String,
+    val userId: String,
+    val username: String,
+    val platform: String,
+    val createdAt: String
+)
+
+data class FriendRequestsResponse(
+    val requests: List<FriendRequest>
+)
+
+data class FriendLeaderboardEntry(
+    val rank: Int,
+    val id: String,
+    val username: String,
+    val platform: String,
+    val points: Double,
+    val streakCount: Int,
+    val longestStreak: Int,
+    val isCurrentUser: Boolean
+)
+
+data class FriendsLeaderboardResponse(
+    val leaderboard: List<FriendLeaderboardEntry>,
+    val currentUserRank: Int,
+    val totalFriends: Int
+)
+
+data class SendFriendRequestBody(
+    val userId: String
+)
+
+data class BlockUserRequest(
+    val userId: String
+)
+
+data class BlockedUser(
+    val id: String,
+    val username: String
+)
+
+data class BlockedUsersResponse(
+    val blocked: List<BlockedUser>
+)
+
+data class RespondRequestBody(
+    val action: String  // "accept" or "decline"
+)
+
+data class FriendRequestResponse(
+    val message: String,
+    val status: String
+)
+
+interface FriendsApi {
+    @GET("friends/search")
+    suspend fun searchUsers(@retrofit2.http.Query("query") query: String): Response<FriendSearchResponse>
+    
+    @GET("friends")
+    suspend fun getFriends(): Response<FriendsListResponse>
+    
+    @GET("friends/leaderboard")
+    suspend fun getLeaderboard(): Response<FriendsLeaderboardResponse>
+    
+    @POST("friends/request")
+    suspend fun sendRequest(@Body request: SendFriendRequestBody): Response<FriendRequestResponse>
+    
+    @GET("friends/requests")
+    suspend fun getIncomingRequests(): Response<FriendRequestsResponse>
+    
+    @GET("friends/requests/sent")
+    suspend fun getSentRequests(): Response<FriendRequestsResponse>
+    
+    @POST("friends/requests/{id}/respond")
+    suspend fun respondToRequest(
+        @retrofit2.http.Path("id") requestId: String,
+        @Body response: RespondRequestBody
+    ): Response<FriendRequestResponse>
+    
+    @retrofit2.http.DELETE("friends/requests/{id}")
+    suspend fun cancelRequest(@retrofit2.http.Path("id") requestId: String): Response<Unit>
+    
+    @retrofit2.http.DELETE("friends/{id}")
+    suspend fun removeFriend(@retrofit2.http.Path("id") friendId: String): Response<Unit>
+
+    @POST("friends/block")
+    suspend fun blockUser(@Body request: BlockUserRequest): Response<Any>
+
+    @retrofit2.http.DELETE("friends/block/{id}")
+    suspend fun unblockUser(@retrofit2.http.Path("id") userId: String): Response<Any>
+
+    @GET("friends/blocked")
+    suspend fun getBlockedUsers(): Response<BlockedUsersResponse>
 }

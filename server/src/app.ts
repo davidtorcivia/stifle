@@ -8,6 +8,8 @@ import { authRoutes } from './routes/auth.js';
 import { eventRoutes } from './routes/events.js';
 import { userRoutes } from './routes/users.js';
 import { groupRoutes } from './routes/groups.js';
+import { friendsRoutes } from './routes/friends.js';
+import { adminRoutes } from './routes/admin.js';
 
 export async function buildApp() {
     const app = Fastify({
@@ -74,6 +76,8 @@ export async function buildApp() {
     await app.register(eventRoutes, { prefix: '/events' });
     await app.register(userRoutes, { prefix: '/users' });
     await app.register(groupRoutes, { prefix: '/groups' });
+    await app.register(friendsRoutes, { prefix: '/friends' });
+    await app.register(adminRoutes, { prefix: '/admin' });
 
     return app;
 }

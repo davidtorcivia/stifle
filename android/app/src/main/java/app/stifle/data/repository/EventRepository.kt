@@ -146,13 +146,10 @@ class EventRepository(
         eventDao.deleteOldEvents(cutoff)
     }
     
-    // Simple in-memory cache for last sync time
-    // In production, persist this to DataStore
-    private var lastSyncTime: Long = 0L
+    // Use TokenManager for persistent last sync time across app restarts
+    private suspend fun getLastSyncTime(): Long = tokenManager.getLastSyncTime()
     
-    private fun getLastSyncTime(): Long = lastSyncTime
-    
-    private fun saveLastSyncTime(time: Long) {
-        lastSyncTime = time
+    private suspend fun saveLastSyncTime(time: Long) {
+        tokenManager.setLastSyncTime(time)
     }
 }

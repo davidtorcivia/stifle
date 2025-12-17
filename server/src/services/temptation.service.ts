@@ -112,16 +112,24 @@ export async function scheduleWeeklySummaries(): Promise<void> {
 
         // If it's already past, schedule for next week
         let delay = targetTime.getTime() - now.getTime();
+        let targetWeekStart = weekStart;
+
         if (delay < 0) {
             delay += 7 * 24 * 60 * 60 * 1000; // Add a week
+            // Ensure we use the correct week ID for the FUTURE job
+            const nextWeek = new Date(weekStart);
+            nextWeek.setDate(nextWeek.getDate() + 7);
+            targetWeekStart = nextWeek;
         }
+
+        const weekId = targetWeekStart.toISOString().split('T')[0];
 
         await weeklyQueue.add(
             'send-weekly-summary',
             { userId: user.id },
             {
                 delay,
-                jobId: `weekly-${user.id}`,
+                jobId: `weekly-${user.id}-${weekId}`,
             }
         );
     }

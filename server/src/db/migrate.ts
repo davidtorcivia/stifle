@@ -1,9 +1,9 @@
 import { db } from './client.js';
 
 const migrations = [
-    {
-        name: '001_initial_schema',
-        sql: `
+  {
+    name: '001_initial_schema',
+    sql: `
       -- Users
       CREATE TABLE IF NOT EXISTS users (
         id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -118,43 +118,136 @@ const migrations = [
         executed_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
       );
     `,
-    },
+  },
+  {
+    name: '002_admin_functionality',
+    sql: `
+      -- Add role column to users (admin vs regular user)
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS role VARCHAR(20) 
+        NOT NULL DEFAULT 'user' CHECK (role IN ('user', 'admin'));
+
+      -- Update existing admin user to have admin role
+      UPDATE users SET role = 'admin' WHERE username = 'admin';
+
+      -- App settings table (key-value store for configuration)
+      CREATE TABLE IF NOT EXISTS app_settings (
+        key VARCHAR(100) PRIMARY KEY,
+        value JSONB NOT NULL,
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+
+      -- Audit log for admin actions
+      CREATE TABLE IF NOT EXISTS audit_log (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        admin_id UUID NOT NULL REFERENCES users(id),
+        action VARCHAR(100) NOT NULL,
+        target_type VARCHAR(50),
+        target_id UUID,
+        details JSONB,
+        ip_address VARCHAR(45),
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+
+      -- Database backups tracking
+      CREATE TABLE IF NOT EXISTS backups (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        filename VARCHAR(255) NOT NULL,
+        size_bytes BIGINT NOT NULL DEFAULT 0,
+        type VARCHAR(20) NOT NULL CHECK (type IN ('manual', 'scheduled')),
+        status VARCHAR(20) NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'completed', 'failed')),
+        created_by UUID REFERENCES users(id),
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        completed_at TIMESTAMPTZ
+      );
+
+      -- Indexes for admin tables
+      CREATE INDEX IF NOT EXISTS idx_audit_log_admin ON audit_log(admin_id, created_at DESC);
+      CREATE INDEX IF NOT EXISTS idx_audit_log_target ON audit_log(target_type, target_id);
+      CREATE INDEX IF NOT EXISTS idx_backups_created ON backups(created_at DESC);
+      CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
+
+      -- Insert default app settings
+      INSERT INTO app_settings (key, value) VALUES
+        ('smtp', '{"host": "", "port": 587, "user": "", "pass": "", "from": "noreply@stifleapp.com", "enabled": false}'::jsonb),
+        ('backup', '{"autoEnabled": false, "keepLast": 10, "scheduleHour": 3}'::jsonb),
+        ('app', '{"registrationOpen": false, "maintenanceMode": false}'::jsonb)
+      ON CONFLICT (key) DO NOTHING;
+    `,
+  },
+  {
+    name: '003_friendships',
+    sql: `
+      -- Friendships table for friend connections
+      -- status: pending = request sent, accepted = mutual friends, declined = request rejected
+      CREATE TABLE IF NOT EXISTS friendships (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        requester_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        addressee_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        status VARCHAR(20) NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'accepted', 'declined', 'blocked')),
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        UNIQUE (requester_id, addressee_id),
+        CHECK (requester_id != addressee_id)
+      );
+
+      -- Indexes for friendship queries
+      CREATE INDEX IF NOT EXISTS idx_friendships_requester ON friendships(requester_id, status);
+      CREATE INDEX IF NOT EXISTS idx_friendships_addressee ON friendships(addressee_id, status);
+      
+      -- Index for finding accepted friendships for leaderboard
+      CREATE INDEX IF NOT EXISTS idx_friendships_accepted ON friendships(status) WHERE status = 'accepted';
+    `,
+  },
+  {
+    name: '002_user_timezone',
+    sql: `
+      ALTER TABLE users 
+      ADD COLUMN IF NOT EXISTS timezone_changed_at TIMESTAMPTZ;
+    `,
+  },
+  {
+    name: '004_privacy_settings',
+    sql: `
+        -- Privacy settings
+        ALTER TABLE users ADD COLUMN IF NOT EXISTS is_discoverable BOOLEAN NOT NULL DEFAULT TRUE;
+      `,
+  },
 ];
 
 async function migrate() {
-    console.log('🔄 Running migrations...');
+  console.log('🔄 Running migrations...');
 
-    // Ensure migrations table exists
-    await db.query(`
+  // Ensure migrations table exists
+  await db.query(`
     CREATE TABLE IF NOT EXISTS migrations (
       name VARCHAR(255) PRIMARY KEY,
       executed_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     )
   `);
 
-    for (const migration of migrations) {
-        const result = await db.query(
-            'SELECT name FROM migrations WHERE name = $1',
-            [migration.name]
-        );
+  for (const migration of migrations) {
+    const result = await db.query(
+      'SELECT name FROM migrations WHERE name = $1',
+      [migration.name]
+    );
 
-        if (result.rows.length === 0) {
-            console.log(`  Running: ${migration.name}`);
-            await db.query(migration.sql);
-            await db.query('INSERT INTO migrations (name) VALUES ($1)', [
-                migration.name,
-            ]);
-            console.log(`  ✅ ${migration.name} complete`);
-        } else {
-            console.log(`  ⏭️  ${migration.name} (already applied)`);
-        }
+    if (result.rows.length === 0) {
+      console.log(`  Running: ${migration.name}`);
+      await db.query(migration.sql);
+      await db.query('INSERT INTO migrations (name) VALUES ($1)', [
+        migration.name,
+      ]);
+      console.log(`  ✅ ${migration.name} complete`);
+    } else {
+      console.log(`  ⏭️  ${migration.name} (already applied)`);
     }
+  }
 
-    console.log('✅ Migrations complete');
-    process.exit(0);
+  console.log('✅ Migrations complete');
+  process.exit(0);
 }
 
 migrate().catch((err) => {
-    console.error('❌ Migration failed:', err);
-    process.exit(1);
+  console.error('❌ Migration failed:', err);
+  process.exit(1);
 });

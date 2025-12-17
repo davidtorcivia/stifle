@@ -119,7 +119,8 @@ class StifleMessagingService : FirebaseMessagingService() {
             notificationId = 1001,
             title = title,
             body = body,
-            autoCancel = true
+            autoCancel = true,
+            source = "temptation"
         )
     }
     
@@ -154,10 +155,14 @@ class StifleMessagingService : FirebaseMessagingService() {
         notificationId: Int,
         title: String,
         body: String,
-        autoCancel: Boolean = true
+        autoCancel: Boolean = true,
+        source: String? = null
     ) {
         val intent = Intent(this, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+            if (source != null) {
+                putExtra("source", source)
+            }
         }
         
         val pendingIntent = PendingIntent.getActivity(

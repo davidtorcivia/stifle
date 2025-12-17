@@ -77,31 +77,11 @@ async function seed() {
         inviteCodes.push(code);
     }
 
-    console.log('📧 Created invite codes (valid for 90 days):');
+    console.log('Invite codes (valid for 90 days):');
     inviteCodes.forEach(code => console.log(`   ${code}`));
     console.log('');
 
-    // Create a sample group
-    const groupCode = generateInviteCode().substring(0, 8);
-    const groupResult = await db.query(
-        `INSERT INTO groups (name, description, creator_id, is_private, invite_code)
-     VALUES ('Friends', 'Default group for friends', $1, true, $2)
-     RETURNING id`,
-        [adminId, groupCode]
-    );
-
-    // Add admin to the group as owner
-    await db.query(
-        `INSERT INTO group_members (group_id, user_id, role)
-     VALUES ($1, $2, 'owner')`,
-        [groupResult.rows[0].id, adminId]
-    );
-
-    console.log('👥 Created sample group "Friends"');
-    console.log(`   Group invite code: ${groupCode}`);
-    console.log('');
-
-    console.log('✅ Seeding complete!\n');
+    console.log('Seeding complete!\n');
     console.log('Next steps:');
     console.log('1. Start the server: npm run dev');
     console.log('2. Use one of the invite codes above to register a new user');

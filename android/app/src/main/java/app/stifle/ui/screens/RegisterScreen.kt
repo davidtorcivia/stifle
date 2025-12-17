@@ -22,7 +22,8 @@ import kotlinx.coroutines.launch
 fun RegisterScreen(
     authRepository: AuthRepository,
     onRegisterSuccess: () -> Unit,
-    onNavigateBack: () -> Unit
+    onNavigateBack: () -> Unit,
+    onNavigateToLogin: () -> Unit
 ) {
     var username by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
@@ -165,6 +166,15 @@ fun RegisterScreen(
                 } else {
                     Text("Create Account")
                 }
+            }
+            
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            TextButton(
+                onClick = onNavigateToLogin,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Already have an account? Log in")
             }
         }
     }

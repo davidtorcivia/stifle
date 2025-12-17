@@ -73,14 +73,22 @@ class GroupRepository(
     
     suspend fun getLeaderboard(groupId: String): Result<List<LeaderboardEntry>> {
         return try {
+            android.util.Log.d("GroupRepository", "Fetching leaderboard for group: $groupId")
             val response = groupsApi.getLeaderboard(groupId)
             
+            android.util.Log.d("GroupRepository", "Response code: ${response.code()}")
             if (response.isSuccessful) {
-                Result.Success(response.body()!!)
+                val body = response.body()
+                android.util.Log.d("GroupRepository", "Response body: $body")
+                android.util.Log.d("GroupRepository", "Leaderboard entries: ${body?.leaderboard?.size ?: 0}")
+                Result.Success(body?.leaderboard ?: emptyList())
             } else {
-                Result.Error("Failed to fetch leaderboard", response.code())
+                val errorBody = response.errorBody()?.string()
+                android.util.Log.e("GroupRepository", "Error: ${response.code()} - $errorBody")
+                Result.Error("Failed to fetch leaderboard: $errorBody", response.code())
             }
         } catch (e: Exception) {
+            android.util.Log.e("GroupRepository", "Exception fetching leaderboard", e)
             Result.Error(e.message ?: "Network error")
         }
     }

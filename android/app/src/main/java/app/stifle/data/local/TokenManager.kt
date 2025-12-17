@@ -31,10 +31,14 @@ class TokenManager(private val context: Context) {
         private val USER_ID = stringPreferencesKey("user_id")
         private val DEVICE_ID = stringPreferencesKey("device_id")
         private val ENCRYPTION_KEY = stringPreferencesKey("enc_key")
+        private val LAST_SYNC_TIME = stringPreferencesKey("last_sync_time")
         
         private const val AES_MODE = "AES/GCM/NoPadding"
         private const val GCM_IV_LENGTH = 12
         private const val GCM_TAG_LENGTH = 128
+        
+        private val THEME_MODE = stringPreferencesKey("theme_mode")
+        private val ONBOARDING_COMPLETE = stringPreferencesKey("onboarding_complete")
     }
     
     private var cachedKey: SecretKey? = null
@@ -171,5 +175,43 @@ class TokenManager(private val context: Context) {
     
     suspend fun getPushToken(): String? {
         return context.dataStore.data.first()[PUSH_TOKEN]
+    }
+
+    // Last sync time management
+    suspend fun setLastSyncTime(time: Long) {
+        context.dataStore.edit { settings ->
+            settings[LAST_SYNC_TIME] = time.toString()
+        }
+    }
+
+    suspend fun getLastSyncTime(): Long {
+        val timeStr = context.dataStore.data.first()[LAST_SYNC_TIME]
+        return timeStr?.toLongOrNull() ?: 0L
+    }
+
+    // Theme Mode Management
+    fun getThemeModeFlow(): Flow<String> {
+        return context.dataStore.data.map { prefs ->
+            prefs[THEME_MODE] ?: "system"
+        }
+    }
+
+    suspend fun setThemeMode(mode: String) {
+        context.dataStore.edit { settings ->
+            settings[THEME_MODE] = mode
+        }
+    }
+    
+    // Onboarding state
+    fun hasCompletedOnboardingFlow(): Flow<Boolean> {
+        return context.dataStore.data.map { prefs ->
+            prefs[ONBOARDING_COMPLETE] == "true"
+        }
+    }
+    
+    suspend fun setOnboardingComplete() {
+        context.dataStore.edit { settings ->
+            settings[ONBOARDING_COMPLETE] = "true"
+        }
     }
 }

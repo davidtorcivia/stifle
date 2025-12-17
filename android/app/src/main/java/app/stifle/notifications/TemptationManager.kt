@@ -25,7 +25,7 @@ object TemptationManager {
     // Message templates - warm, encouraging, not preachy
     val temptationMessages = listOf(
         // Gentle observations
-        "Hey. Just checking in. 👋",
+        "Hey. Just checking in.",
         "The world outside is still there.",
         "Take a breath. It's okay to pause.",
         
@@ -50,14 +50,14 @@ object TemptationManager {
         "The real world misses you.",
     )
     
-    // Streak milestone messages
+    // Streak milestone messages - minimal, clean
     val milestoneMessages = mapOf(
-        5 to "Nice start! 5 minutes of peace. 🌱",
-        15 to "15 minutes! You're building momentum. 💪",
-        30 to "Half an hour of focus. Impressive. ⭐",
-        60 to "One whole hour! You've got this. 🏆",
-        120 to "Two hours! You're on fire. 🔥",
-        240 to "Four hours of zen. Legendary. 👑",
+        5 to "Nice start — 5 minutes of peace.",
+        15 to "15 minutes. You're building momentum.",
+        30 to "Half an hour of focus. Impressive.",
+        60 to "One whole hour. You've got this.",
+        120 to "Two hours. You're on fire.",
+        240 to "Four hours of zen. Legendary.",
     )
     
     /**

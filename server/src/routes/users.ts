@@ -3,15 +3,48 @@ import { z } from 'zod';
 import { db } from '../db/client.js';
 import crypto from 'crypto';
 import { getWeekStartForTimezone } from '../utils/time.js';
+import { scheduleTemptationForUser } from '../services/temptation.service.js';
+import { calculateStreakPoints } from '../utils/scoring.js';
+
+// Password must have: 8+ chars, 1 uppercase, 1 lowercase, 1 number
+const passwordSchema = z.string()
+    .min(8, 'Password must be at least 8 characters')
+    .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
+    .regex(/[a-z]/, 'Password must contain at least one lowercase letter')
+    .regex(/[0-9]/, 'Password must contain at least one number');
 
 const updateUserSchema = z.object({
     username: z.string().min(3).max(30).regex(/^[a-zA-Z0-9_]+$/).optional(),
     timezone: z.string().optional(),
+    isDiscoverable: z.boolean().optional(),
 });
 
 const updateTrackingSchema = z.object({
     status: z.enum(['pending', 'verified', 'broken']),
 });
+
+const changePasswordSchema = z.object({
+    currentPassword: z.string(),
+    newPassword: passwordSchema,
+});
+
+const changeEmailSchema = z.object({
+    email: z.string().email(),
+    password: z.string(), // Require password confirmation for security
+});
+
+// Password hashing helpers
+async function hashPassword(password: string): Promise<string> {
+    const salt = crypto.randomBytes(16).toString('hex');
+    const hash = crypto.scryptSync(password, salt, 64).toString('hex');
+    return `${salt}:${hash}`;
+}
+
+async function verifyPassword(password: string, stored: string): Promise<boolean> {
+    const [salt, hash] = stored.split(':');
+    const testHash = crypto.scryptSync(password, salt, 64).toString('hex');
+    return hash === testHash;
+}
 
 export async function userRoutes(app: FastifyInstance) {
     // Get current user
@@ -21,7 +54,7 @@ export async function userRoutes(app: FastifyInstance) {
         const userId = (request as any).user.id;
 
         const result = await db.query(
-            `SELECT id, username, email, timezone, platform, tracking_status, created_at
+            `SELECT id, username, email, timezone, platform, tracking_status, created_at, is_discoverable
        FROM users WHERE id = $1`,
             [userId]
         );
@@ -56,10 +89,9 @@ export async function userRoutes(app: FastifyInstance) {
             trackingStatus: user.tracking_status,
             createdAt: user.created_at,
             weeklyScore: {
-                totalPoints: Number(weeklyScore.total_points),
-                streakCount: weeklyScore.streak_count,
                 longestStreak: weeklyScore.longest_streak,
             },
+            isDiscoverable: user.is_discoverable,
         };
     });
 
@@ -130,9 +162,10 @@ export async function userRoutes(app: FastifyInstance) {
         if (lastStreakResult.rows.length > 0) {
             const row = lastStreakResult.rows[0];
             const durationSeconds = Math.round(Number(row.duration_seconds) || 0);
-            // Calculate points earned using same formula as scoring
-            const durationMinutes = durationSeconds / 60;
-            const pointsEarned = durationSeconds >= 60 ? Math.max(0, Math.round(Math.log(durationMinutes) * 10 * 100) / 100) : 0;
+            // Use the SAME formula as weekly score calculation
+            const lockTimestamp = new Date(row.lock_time).getTime();
+            const unlockTimestamp = new Date(row.unlock_time).getTime();
+            const pointsEarned = calculateStreakPoints(lockTimestamp, unlockTimestamp);
 
             lastStreak = {
                 durationSeconds,
@@ -148,6 +181,182 @@ export async function userRoutes(app: FastifyInstance) {
         };
     });
 
+    // Get weekly summary for turnovers and ghost comparisons
+    app.get('/me/weekly-summary', {
+        preHandler: [(app as any).authenticate],
+    }, async (request) => {
+        const userId = (request as any).user.id;
+
+        // Get user timezone
+        const userResult = await db.query(
+            'SELECT timezone FROM users WHERE id = $1',
+            [userId]
+        );
+        const timezone = userResult.rows[0]?.timezone || 'UTC';
+        const currentWeekStart = getWeekStartForTimezone(new Date(), timezone);
+
+        // Calculate last week start
+        const lastWeekStart = new Date(currentWeekStart);
+        lastWeekStart.setDate(lastWeekStart.getDate() - 7);
+
+        // Get this week's score
+        const thisWeekResult = await db.query(
+            `SELECT COALESCE(total_points, 0) as points, COALESCE(streak_count, 0) as streaks
+             FROM weekly_scores WHERE user_id = $1 AND week_start = $2`,
+            [userId, currentWeekStart]
+        );
+        const thisWeekPoints = Number(thisWeekResult.rows[0]?.points || 0);
+        const thisWeekStreaks = thisWeekResult.rows[0]?.streaks || 0;
+
+        // Get last week's score
+        const lastWeekResult = await db.query(
+            `SELECT COALESCE(total_points, 0) as points
+             FROM weekly_scores WHERE user_id = $1 AND week_start = $2`,
+            [userId, lastWeekStart]
+        );
+        const lastWeekPoints = Number(lastWeekResult.rows[0]?.points || 0);
+
+        // Get friends average (current week)
+        const friendsAvgResult = await db.query(
+            `WITH friend_ids AS (
+                SELECT CASE 
+                    WHEN f.requester_id = $1 THEN f.addressee_id 
+                    ELSE f.requester_id 
+                END as friend_id
+                FROM friendships f
+                WHERE (f.requester_id = $1 OR f.addressee_id = $1)
+                  AND f.status = 'accepted'
+            )
+            SELECT AVG(COALESCE(ws.total_points, 0)) as avg_points,
+                   COUNT(*) as friend_count
+            FROM friend_ids fi
+            LEFT JOIN weekly_scores ws ON ws.user_id = fi.friend_id 
+                AND ws.week_start = $2`,
+            [userId, currentWeekStart]
+        );
+        const friendsAvg = Number(friendsAvgResult.rows[0]?.avg_points || 0);
+        const friendCount = parseInt(friendsAvgResult.rows[0]?.friend_count || '0');
+
+        // Get rank among friends
+        const rankResult = await db.query(
+            `WITH friend_ids AS (
+                SELECT CASE 
+                    WHEN f.requester_id = $1 THEN f.addressee_id 
+                    ELSE f.requester_id 
+                END as friend_id
+                FROM friendships f
+                WHERE (f.requester_id = $1 OR f.addressee_id = $1)
+                  AND f.status = 'accepted'
+            ),
+            all_users AS (
+                SELECT $1 as user_id
+                UNION
+                SELECT friend_id FROM friend_ids
+            ),
+            ranked AS (
+                SELECT au.user_id,
+                       COALESCE(ws.total_points, 0) as points,
+                       RANK() OVER (ORDER BY COALESCE(ws.total_points, 0) DESC) as rank
+                FROM all_users au
+                LEFT JOIN weekly_scores ws ON ws.user_id = au.user_id 
+                    AND ws.week_start = $2
+            )
+            SELECT rank, points FROM ranked WHERE user_id = $1`,
+            [userId, currentWeekStart]
+        );
+        const currentRank = parseInt(rankResult.rows[0]?.rank || '1');
+
+        // Get personal best and average (all time)
+        const historyResult = await db.query(
+            `SELECT MAX(total_points) as best, AVG(total_points) as avg,
+                    (SELECT week_start FROM weekly_scores WHERE user_id = $1 
+                     ORDER BY total_points DESC LIMIT 1) as best_week
+             FROM weekly_scores WHERE user_id = $1`,
+            [userId]
+        );
+        const personalBest = Number(historyResult.rows[0]?.best || 0);
+        const personalAvg = Number(historyResult.rows[0]?.avg || 0);
+        const bestWeek = historyResult.rows[0]?.best_week;
+
+        // Calculate trend (weeks improving in a row)
+        const trendResult = await db.query(
+            `SELECT week_start, total_points FROM weekly_scores 
+             WHERE user_id = $1 
+             ORDER BY week_start DESC 
+             LIMIT 4`,
+            [userId]
+        );
+        let weeksImproving = 0;
+        const weeks = trendResult.rows;
+        for (let i = 0; i < weeks.length - 1; i++) {
+            if (Number(weeks[i].total_points) > Number(weeks[i + 1].total_points)) {
+                weeksImproving++;
+            } else {
+                break;
+            }
+        }
+
+        // Build response (only include positive comparisons)
+        const response: any = {
+            thisWeek: {
+                points: thisWeekPoints,
+                streaks: thisWeekStreaks,
+                rank: currentRank,
+                totalParticipants: friendCount + 1,
+            },
+        };
+
+        // vs Last Week (only if we have data and it's positive or the same)
+        if (lastWeekPoints > 0) {
+            const diff = thisWeekPoints - lastWeekPoints;
+            const percentDiff = lastWeekPoints > 0 ? (diff / lastWeekPoints) * 100 : 0;
+            response.vsLastWeek = {
+                pointsDiff: Math.round(diff * 100) / 100,
+                percentDiff: Math.round(percentDiff * 10) / 10,
+                wasImprovement: diff >= 0,
+            };
+        }
+
+        // vs Friends Average (only if user has friends)
+        if (friendCount > 0 && friendsAvg > 0) {
+            const diff = thisWeekPoints - friendsAvg;
+            const percentDiff = (diff / friendsAvg) * 100;
+            response.vsFriendsAvg = {
+                percentDiff: Math.round(percentDiff * 10) / 10,
+                isAboveAvg: diff >= 0,
+            };
+        }
+
+        // vs Personal Best
+        if (personalBest > 0) {
+            const isBeat = thisWeekPoints >= personalBest;
+            response.vsPersonalBest = {
+                bestPoints: personalBest,
+                bestWeek: bestWeek,
+                isBeat,
+                pointsAway: isBeat ? 0 : Math.round((personalBest - thisWeekPoints) * 100) / 100,
+            };
+        }
+
+        // vs Personal Average
+        if (personalAvg > 0) {
+            const diff = thisWeekPoints - personalAvg;
+            const percentDiff = (diff / personalAvg) * 100;
+            response.vsPersonalAvg = {
+                avgPoints: Math.round(personalAvg * 100) / 100,
+                percentDiff: Math.round(percentDiff * 10) / 10,
+            };
+        }
+
+        // Positive trend only
+        if (weeksImproving >= 2) {
+            response.trend = {
+                weeksImproving,
+            };
+        }
+
+        return response;
+    });
 
     // Update user profile
     app.put('/me', {
@@ -174,8 +383,32 @@ export async function userRoutes(app: FastifyInstance) {
         }
 
         if (body.timezone) {
+            // Check if timezone was changed recently (rate limit: once per 7 days)
+            const lastChangeResult = await db.query(
+                `SELECT timezone_changed_at FROM users WHERE id = $1`,
+                [userId]
+            );
+
+            const lastChange = lastChangeResult.rows[0]?.timezone_changed_at;
+            const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+
+            if (lastChange && new Date(lastChange) > sevenDaysAgo) {
+                const nextAllowed = new Date(new Date(lastChange).getTime() + 7 * 24 * 60 * 60 * 1000);
+                return reply.status(429).send({
+                    error: 'Timezone can only be changed once per week',
+                    nextAllowedAt: nextAllowed.toISOString()
+                });
+            }
+
             updates.push(`timezone = $${paramIndex++}`);
             values.push(body.timezone);
+            updates.push(`timezone_changed_at = $${paramIndex++}`);
+            values.push(new Date());
+        }
+
+        if (body.isDiscoverable !== undefined) {
+            updates.push(`is_discoverable = $${paramIndex++}`);
+            values.push(body.isDiscoverable);
         }
 
         if (updates.length === 0) {
@@ -241,6 +474,86 @@ export async function userRoutes(app: FastifyInstance) {
         );
 
         return { success: true, status: body.status };
+    });
+
+    // Change password
+    app.put('/me/password', {
+        preHandler: [(app as any).authenticate],
+    }, async (request, reply) => {
+        const userId = (request as any).user.id;
+        const body = changePasswordSchema.parse(request.body);
+
+        // Get current password hash
+        const userResult = await db.query(
+            'SELECT password_hash FROM users WHERE id = $1',
+            [userId]
+        );
+
+        if (userResult.rows.length === 0) {
+            return reply.status(404).send({ error: 'User not found' });
+        }
+
+        // Verify current password
+        const validPassword = await verifyPassword(body.currentPassword, userResult.rows[0].password_hash);
+        if (!validPassword) {
+            return reply.status(401).send({ error: 'Current password is incorrect' });
+        }
+
+        // Hash new password
+        const newHash = await hashPassword(body.newPassword);
+
+        // Update password
+        await db.query(
+            'UPDATE users SET password_hash = $1 WHERE id = $2',
+            [newHash, userId]
+        );
+
+        // Revoke all refresh tokens to force re-login on other devices
+        await db.query('DELETE FROM refresh_tokens WHERE user_id = $1', [userId]);
+
+        return { success: true, message: 'Password changed successfully' };
+    });
+
+    // Change email
+    app.put('/me/email', {
+        preHandler: [(app as any).authenticate],
+    }, async (request, reply) => {
+        const userId = (request as any).user.id;
+        const body = changeEmailSchema.parse(request.body);
+
+        // Get current password hash
+        const userResult = await db.query(
+            'SELECT password_hash FROM users WHERE id = $1',
+            [userId]
+        );
+
+        if (userResult.rows.length === 0) {
+            return reply.status(404).send({ error: 'User not found' });
+        }
+
+        // Verify password (required for email change security)
+        const validPassword = await verifyPassword(body.password, userResult.rows[0].password_hash);
+        if (!validPassword) {
+            return reply.status(401).send({ error: 'Password is incorrect' });
+        }
+
+        // Check if email is taken
+        const existingResult = await db.query(
+            'SELECT id FROM users WHERE email = $1 AND id != $2',
+            [body.email, userId]
+        );
+
+        if (existingResult.rows.length > 0) {
+            return reply.status(409).send({ error: 'Email already in use' });
+        }
+
+        // Update email
+        await db.query(
+            'UPDATE users SET email = $1 WHERE id = $2',
+            [body.email, userId]
+        );
+
+        return { success: true, message: 'Email changed successfully' };
     });
 
     // Create invite codes (each user can create up to 5)
@@ -395,6 +708,9 @@ export async function userRoutes(app: FastifyInstance) {
                 `UPDATE temptation_settings SET ${updates.join(', ')} WHERE user_id = $${paramIndex}`,
                 values
             );
+
+            // Reschedule immediately to reflect new settings
+            await scheduleTemptationForUser(userId);
         }
 
         return { success: true };
