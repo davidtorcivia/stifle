@@ -66,10 +66,15 @@ class MainActivity : ComponentActivity() {
                             }
                             
                             // Determine start destination
+                            // Flow: Onboarding -> Register -> Login -> Home
                             val startDestination = when {
-                                isLoggedIn != true -> "login"
+                                // New user: show onboarding first
                                 hasCompletedOnboarding != true -> "onboarding"
+                                // After onboarding, not logged in: show register (new users)
+                                isLoggedIn != true -> "register"
+                                // Logged in with join code: go to groups
                                 joinCode != null -> "groups?code=$joinCode"
+                                // Logged in: go home
                                 else -> "home"
                             }
                             

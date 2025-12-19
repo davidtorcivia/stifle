@@ -5,9 +5,30 @@ plugins {
     id("com.google.gms.google-services")
 }
 
+import java.util.Properties
+
+// Load keystore properties
+val keystorePropertiesFile = rootProject.file("keystore.properties")
+val keystoreProperties = Properties()
+if (keystorePropertiesFile.exists()) {
+    keystoreProperties.load(keystorePropertiesFile.inputStream())
+}
+
 android {
     namespace = "app.stifle"
     compileSdk = 35
+
+    // Signing config for release builds
+    signingConfigs {
+        create("release") {
+            if (keystorePropertiesFile.exists()) {
+                storeFile = file(keystoreProperties.getProperty("storeFile"))
+                storePassword = keystoreProperties.getProperty("storePassword")
+                keyAlias = keystoreProperties.getProperty("keyAlias")
+                keyPassword = keystoreProperties.getProperty("keyPassword")
+            }
+        }
+    }
 
     defaultConfig {
         applicationId = "app.stifle"
@@ -40,6 +61,8 @@ android {
             )
             // Production API
             buildConfigField("String", "API_BASE_URL", "\"https://api.stifleapp.com\"")
+            // Sign with release keystore
+            signingConfig = signingConfigs.getByName("release")
         }
     }
 
