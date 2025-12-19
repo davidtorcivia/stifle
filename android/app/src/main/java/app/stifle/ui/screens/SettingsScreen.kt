@@ -85,7 +85,15 @@ fun SettingsScreen(
     
     val themeMode by tokenManager.getThemeModeFlow().collectAsState(initial = "system")
 
+    LaunchedEffect(snackbarMessage) {
+        snackbarMessage?.let {
+             snackbarHostState.showSnackbar(it)
+             snackbarMessage = null
+        }
+    }
+
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             CenterAlignedTopAppBar(
                 title = { 
@@ -113,8 +121,11 @@ fun SettingsScreen(
         
         androidx.compose.animation.Crossfade(targetState = isLoading, label = "settings_loading") { loading ->
             if (loading) {
-                Box(modifier = Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator()
+                Box(modifier = Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.TopCenter) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Spacer(modifier = Modifier.height(200.dp))
+                        CircularProgressIndicator()
+                    }
                 }
             } else {
                 Column(

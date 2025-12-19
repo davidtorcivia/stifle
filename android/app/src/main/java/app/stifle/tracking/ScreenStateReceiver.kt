@@ -12,24 +12,22 @@ import kotlinx.coroutines.launch
 
 /**
  * Receives screen lock/unlock events from the system.
- * This is the core tracking mechanism for Android.
  * 
- * ACTION_USER_PRESENT: Fired when user unlocks the device (after PIN/biometric)
- * ACTION_SCREEN_ON: Fired when screen turns on (before unlock) - we ignore this
- * ACTION_SCREEN_OFF: Fired when screen turns off
+ * To ensure 100% accuracy and prevent duplicates, we now check the 
+ * actual database state before recording any new event.
  * 
- * IMPORTANT: We only record a LOCK if the user actually unlocked first.
- * This prevents recording "glance at lock screen" as a lock event.
+ * Logic:
+ * - USER_PRESENT: Record UNLOCK only if last event != UNLOCK
+ * - SCREEN_OFF: Record LOCK only if last event != LOCK
+ * 
+ * This treats the database as the single source of truth and handles
+ * "glance" scenarios (where screen wakes but doesn't unlock) naturally
+ * because the DB state remains "locked" throughout.
  */
 class ScreenStateReceiver : BroadcastReceiver() {
     
     // Use SupervisorJob so one failure doesn't cancel other operations
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
-    
-    // Track if user has unlocked since last lock - prevents recording
-    // SCREEN_OFF events when user just glanced at lock screen without unlocking
-    @Volatile
-    private var hasUnlockedSinceLock = false
     
     override fun onReceive(context: Context, intent: Intent) {
         val app = context.applicationContext as? StifleApp ?: run {
@@ -42,47 +40,51 @@ class ScreenStateReceiver : BroadcastReceiver() {
         
         when (intent.action) {
             Intent.ACTION_USER_PRESENT -> {
-                // User unlocked the device (after PIN/biometric)
-                if (!hasUnlockedSinceLock) {
-                    hasUnlockedSinceLock = true
-                    Log.d("ScreenStateReceiver", "Recording UNLOCK (USER_PRESENT)")
-                    scope.launch {
-                        try {
+                // User unlocked the device
+                scope.launch {
+                    try {
+                        val lastEvent = eventRepository.getLastEvent()
+                        // Only record if we aren't already unlocked
+                        if (lastEvent?.eventType != "unlock") {
+                            Log.d("ScreenStateReceiver", "Recording UNLOCK (prev: ${lastEvent?.eventType})")
                             eventRepository.recordUnlock("automatic")
                             SyncWorker.enqueue(context)
-                        } catch (e: Exception) {
-                            Log.e("ScreenStateReceiver", "Failed to record unlock", e)
+                        } else {
+                            Log.d("ScreenStateReceiver", "Skipping USER_PRESENT - already unlocked")
                         }
+                    } catch (e: Exception) {
+                        Log.e("ScreenStateReceiver", "Failed to process USER_PRESENT", e)
                     }
-                } else {
-                    Log.d("ScreenStateReceiver", "Skipping USER_PRESENT - already recorded unlock")
                 }
             }
             
             Intent.ACTION_SCREEN_ON -> {
-                // Screen turned on - just logging, we wait for USER_PRESENT
-                Log.d("ScreenStateReceiver", "SCREEN_ON detected - waiting for USER_PRESENT")
+                // Just for logging/debugging
+                Log.d("ScreenStateReceiver", "SCREEN_ON detected")
             }
             
             Intent.ACTION_SCREEN_OFF -> {
-                // Screen turned off - only record LOCK if user actually unlocked
-                if (hasUnlockedSinceLock) {
-                    Log.d("ScreenStateReceiver", "Recording LOCK (SCREEN_OFF after unlock)")
-                    hasUnlockedSinceLock = false
-                    scope.launch {
-                        try {
+                // Screen turned off
+                scope.launch {
+                    try {
+                        val lastEvent = eventRepository.getLastEvent()
+                        // Only record if we aren't already locked
+                        // This handles the "Glance" case: if last event was LOCK, and we glance (wake/sleep),
+                        // this check returns false and we skip the duplicate LOCK.
+                        if (lastEvent == null || lastEvent.eventType != "lock") {
+                            Log.d("ScreenStateReceiver", "Recording LOCK (prev: ${lastEvent?.eventType})")
                             eventRepository.recordLock("automatic")
                             SyncWorker.enqueue(context)
-                        } catch (e: Exception) {
-                            Log.e("ScreenStateReceiver", "Failed to record lock", e)
+                        } else {
+                            Log.d("ScreenStateReceiver", "Skipping SCREEN_OFF - already locked")
                         }
+                    } catch (e: Exception) {
+                        Log.e("ScreenStateReceiver", "Failed to process SCREEN_OFF", e)
                     }
-                } else {
-                    // User just glanced at lock screen without unlocking - ignore
-                    Log.d("ScreenStateReceiver", "Ignoring SCREEN_OFF - no unlock preceded this")
                 }
             }
         }
     }
 }
+
 
