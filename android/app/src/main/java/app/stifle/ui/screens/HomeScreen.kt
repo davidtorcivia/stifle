@@ -345,9 +345,9 @@ private fun WeeklySummaryCard(summary: WeeklySummary) {
                 
                 // vs Personal Best
                 summary.vsPersonalBest?.let { vs ->
-                    // Only show comparison if there was a previous best to beat (bestPoints > 0)
-                    // Otherwise it's trivially "New Best" for every new user
-                    if (vs.bestPoints > 0.0) {
+                    // Only show comparison if we have history (vsLastWeek is not null)
+                    // If vsLastWeek is null, it's the first week, so "New Best" is trivial.
+                    if (summary.vsLastWeek != null) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             if (vs.isBeat) {
                                 Text(

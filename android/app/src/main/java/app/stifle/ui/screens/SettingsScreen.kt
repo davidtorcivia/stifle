@@ -80,7 +80,6 @@ fun SettingsScreen(
                 inviteCodes = invitesResponse.body() ?: emptyList()
             }
         } catch (_: Exception) {}
-        isLoading = false
     }
     
     val themeMode by tokenManager.getThemeModeFlow().collectAsState(initial = "system")
@@ -119,19 +118,13 @@ fun SettingsScreen(
         // Remember scroll state at this level so it persists across loading state changes
         val scrollState = rememberScrollState()
         
-        androidx.compose.animation.Crossfade(targetState = isLoading, label = "settings_loading") { loading ->
-            if (loading) {
-                Box(modifier = Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator()
-                }
-            } else {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(padding)
-                        .verticalScroll(scrollState)
-                        .padding(horizontal = 24.dp)
-                ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .verticalScroll(scrollState)
+                .padding(horizontal = 24.dp)
+        ) {
                     Spacer(modifier = Modifier.height(16.dp))
 
                 // === APPEARANCE ===
@@ -575,8 +568,6 @@ fun SettingsScreen(
                 
                 Spacer(modifier = Modifier.height(32.dp))
             }
-        }
-        }
     }
     
     // Edit username dialog
