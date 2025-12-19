@@ -447,6 +447,16 @@ footer p {
     color: var(--text-muted);
 }
 
+footer a {
+    color: var(--text-muted);
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+footer a:hover {
+    color: var(--accent);
+}
+
 /* ============================================
    Responsive
    ============================================ */
