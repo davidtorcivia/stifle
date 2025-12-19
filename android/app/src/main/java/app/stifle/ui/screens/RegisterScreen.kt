@@ -1,7 +1,9 @@
 package app.stifle.ui.screens
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
@@ -51,15 +53,18 @@ fun RegisterScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .padding(24.dp),
+                .padding(horizontal = 24.dp)
+                .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            Spacer(modifier = Modifier.height(8.dp))
+            
             Text(
                 text = "Join Stifle",
                 style = MaterialTheme.typography.headlineMedium
             )
             
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(4.dp))
             
             Text(
                 text = "Compete with friends to use your phone less",
@@ -67,7 +72,7 @@ fun RegisterScreen(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(16.dp))
             
             OutlinedTextField(
                 value = inviteCode,
@@ -78,7 +83,7 @@ fun RegisterScreen(
                 modifier = Modifier.fillMaxWidth()
             )
             
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(8.dp))
             
             OutlinedTextField(
                 value = username,
@@ -90,7 +95,7 @@ fun RegisterScreen(
                 modifier = Modifier.fillMaxWidth()
             )
             
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(8.dp))
             
             OutlinedTextField(
                 value = email,
@@ -104,7 +109,7 @@ fun RegisterScreen(
                 modifier = Modifier.fillMaxWidth()
             )
             
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(8.dp))
             
             OutlinedTextField(
                 value = password,
@@ -134,7 +139,7 @@ fun RegisterScreen(
                 )
             }
             
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(16.dp))
             
             val isValid = inviteCode.isNotBlank() && 
                           username.length >= 3 && 
@@ -168,7 +173,7 @@ fun RegisterScreen(
                 }
             }
             
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(8.dp))
             
             TextButton(
                 onClick = onNavigateToLogin,
@@ -176,6 +181,8 @@ fun RegisterScreen(
             ) {
                 Text("Already have an account? Log in")
             }
+            
+            Spacer(modifier = Modifier.height(24.dp))
         }
     }
 }
