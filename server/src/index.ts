@@ -20,9 +20,19 @@ async function main() {
         await app.listen({ port: config.PORT, host: config.HOST });
         console.log(`🚀 Server running at http://${config.HOST}:${config.PORT}`);
 
-        // Start background schedulers
+        // Start background schedulers (non-blocking with timeout)
         console.log('📅 Initializing background schedulers...');
-        await scheduleWeeklySummaries();
+
+        // Don't block server start on scheduler initialization
+        const schedulerTimeout = 30000; // 30 second timeout
+        Promise.race([
+            scheduleWeeklySummaries(),
+            new Promise((_, reject) =>
+                setTimeout(() => reject(new Error('Scheduler initialization timed out')), schedulerTimeout)
+            )
+        ])
+            .then(() => console.log('✅ Background schedulers initialized'))
+            .catch(err => console.error('⚠️ Scheduler initialization failed (server still running):', err));
 
         // Run every hour to catch new users or missed intervals
         setInterval(() => {
@@ -30,6 +40,8 @@ async function main() {
                 console.error('Failed to run scheduled weekly summaries:', err)
             );
         }, 60 * 60 * 1000);
+
+        console.log('✅ Server fully started');
 
     } catch (err) {
         app.log.error(err);

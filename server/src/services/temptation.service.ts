@@ -98,11 +98,16 @@ export async function scheduleTemptationForUser(userId: string): Promise<void> {
  * Called at the start of each week (Monday 9am in each timezone)
  */
 export async function scheduleWeeklySummaries(): Promise<void> {
+    console.log('  → Querying users for weekly scheduling...');
+
     // Get all users with their timezones
     const usersResult = await db.query(
         `SELECT id, timezone FROM users WHERE tracking_status = 'verified'`
     );
 
+    console.log(`  → Found ${usersResult.rows.length} verified users`);
+
+    let scheduled = 0;
     for (const user of usersResult.rows) {
         // Calculate when Monday 9am is in their timezone
         const now = new Date();
@@ -124,15 +129,22 @@ export async function scheduleWeeklySummaries(): Promise<void> {
 
         const weekId = targetWeekStart.toISOString().split('T')[0];
 
-        await weeklyQueue.add(
-            'send-weekly-summary',
-            { userId: user.id },
-            {
-                delay,
-                jobId: `weekly-${user.id}-${weekId}`,
-            }
-        );
+        try {
+            await weeklyQueue.add(
+                'send-weekly-summary',
+                { userId: user.id },
+                {
+                    delay,
+                    jobId: `weekly-${user.id}-${weekId}`,
+                }
+            );
+            scheduled++;
+        } catch (err) {
+            console.error(`  ✗ Failed to schedule for user ${user.id}:`, err);
+        }
     }
+
+    console.log(`  → Scheduled ${scheduled}/${usersResult.rows.length} weekly summary jobs`);
 }
 
 // ============================================================================
