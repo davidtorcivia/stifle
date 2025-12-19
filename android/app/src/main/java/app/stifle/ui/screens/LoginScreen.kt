@@ -30,7 +30,9 @@ fun LoginScreen(
     
     val scope = rememberCoroutineScope()
     
-    Scaffold { padding ->
+    Scaffold(
+        contentWindowInsets = WindowInsets(0, 0, 0, 0)
+    ) { padding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()

@@ -6,14 +6,10 @@
         <domain includeSubdomains="true">localhost</domain>
     </domain-config>
     
-    <!-- Production: require HTTPS with certificate pinning -->
+    <!-- Production: require HTTPS -->
     <domain-config cleartextTrafficPermitted="false">
-        <domain includeSubdomains="true">stifle.app</domain>
-        <domain includeSubdomains="true">api.stifle.app</domain>
-        <!-- Add certificate pins when you have production certs -->
-        <!-- <pin-set>
-            <pin digest="SHA-256">base64_encoded_pin_here</pin>
-        </pin-set> -->
+        <domain includeSubdomains="true">stifleapp.com</domain>
+        <domain includeSubdomains="true">api.stifleapp.com</domain>
     </domain-config>
     
     <!-- Default: no cleartext -->

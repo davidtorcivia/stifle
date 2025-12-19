@@ -85,26 +85,7 @@ fun HomeScreen(
     }
     
     Scaffold(
-        topBar = {
-            CenterAlignedTopAppBar(
-                title = { 
-                    Text(
-                        "Stifle Your Phone",
-                        style = MaterialTheme.typography.headlineMedium,
-                        fontFamily = androidx.compose.ui.text.font.FontFamily.Serif
-                    ) 
-                },
-                actions = {
-                    IconButton(onClick = onNavigateToSettings) {
-                        Icon(Icons.Default.Settings, contentDescription = "Settings")
-                    }
-                    // The Sign Out option from the original DropdownMenu is removed as per the instruction's implied change.
-                },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = Color.Transparent
-                )
-            )
-        }
+        contentWindowInsets = WindowInsets(0, 0, 0, 0)
     ) { padding ->
         Column(
             modifier = Modifier
@@ -113,7 +94,34 @@ fun HomeScreen(
                 .padding(horizontal = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Spacer(modifier = Modifier.weight(0.15f))
+            // Compact header with settings
+            Spacer(modifier = Modifier.height(16.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Spacer(modifier = Modifier.width(40.dp)) // Balance for settings icon
+                Text(
+                    "Stifle Your Phone",
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontFamily = androidx.compose.ui.text.font.FontFamily.Serif,
+                    modifier = Modifier.weight(1f),
+                    textAlign = TextAlign.Center
+                )
+                IconButton(
+                    onClick = onNavigateToSettings,
+                    modifier = Modifier.size(40.dp)
+                ) {
+                    Icon(
+                        Icons.Default.Settings, 
+                        contentDescription = "Settings",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.height(8.dp))
             
             // === HERO SECTION ===
             if (isInStreak) {
