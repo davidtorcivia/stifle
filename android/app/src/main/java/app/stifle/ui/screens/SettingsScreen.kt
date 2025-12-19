@@ -121,11 +121,8 @@ fun SettingsScreen(
         
         androidx.compose.animation.Crossfade(targetState = isLoading, label = "settings_loading") { loading ->
             if (loading) {
-                Box(modifier = Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.TopCenter) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Spacer(modifier = Modifier.height(200.dp))
-                        CircularProgressIndicator()
-                    }
+                Box(modifier = Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator()
                 }
             } else {
                 Column(

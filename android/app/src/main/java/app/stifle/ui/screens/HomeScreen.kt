@@ -345,26 +345,45 @@ private fun WeeklySummaryCard(summary: WeeklySummary) {
                 
                 // vs Personal Best
                 summary.vsPersonalBest?.let { vs ->
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        if (vs.isBeat) {
+                    // Only show comparison if there was a previous best to beat (bestPoints > 0)
+                    // Otherwise it's trivially "New Best" for every new user
+                    if (vs.bestPoints > 0.0) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            if (vs.isBeat) {
+                                Text(
+                                    text = "\u2605 NEW BEST", // ★
+                                    style = MaterialTheme.typography.titleMedium,
+                                    color = MaterialTheme.colorScheme.tertiary,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            } else if (vs.pointsAway > 0) {
+                                Text(
+                                    text = "${String.format("%.0f", vs.pointsAway)} away",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
                             Text(
-                                text = "\u2605 NEW BEST", // ★
-                                style = MaterialTheme.typography.titleMedium,
-                                color = MaterialTheme.colorScheme.tertiary,
-                                fontWeight = FontWeight.Bold
-                            )
-                        } else if (vs.pointsAway > 0) {
-                            Text(
-                                text = "${String.format("%.0f", vs.pointsAway)} away",
-                                style = MaterialTheme.typography.titleMedium,
+                                text = if (vs.isBeat) "personal best" else "from best",
+                                style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
-                        Text(
-                            text = if (vs.isBeat) "personal best" else "from best",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+                    } else if (summary.thisWeek.points > 0) {
+                        // First week with points
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                             Text(
+                                text = "Setting Record",
+                                style = MaterialTheme.typography.titleMedium,
+                                color = MaterialTheme.colorScheme.primary,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                text = "first week",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
                     }
                 }
             }
