@@ -114,7 +114,8 @@ data class UserProfile(
     val trackingStatus: String,
     val createdAt: String,
     val weeklyScore: WeeklyScore,
-    val isDiscoverable: Boolean = true // Added field
+    val isDiscoverable: Boolean = true,
+    val ghostMode: Boolean = false
 )
 
 data class WeeklyScore(
@@ -130,7 +131,8 @@ data class UpdateTrackingRequest(
 data class UpdateProfileRequest(
     val username: String? = null,
     val timezone: String? = null,
-    val isDiscoverable: Boolean? = null
+    val isDiscoverable: Boolean? = null,
+    val ghostMode: Boolean? = null
 )
 
 data class InviteCode(
@@ -260,6 +262,9 @@ interface UsersApi {
     
     @PUT("users/me/email")
     suspend fun changeEmail(@Body request: Map<String, String>): Response<Unit>
+    
+    @GET("users/me/export")
+    suspend fun exportData(): Response<Map<String, Any>>
 }
 
 // === Groups API ===

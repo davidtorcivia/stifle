@@ -389,6 +389,9 @@ fun SettingsScreen(
 
                 profile?.let { p ->
                     var isDiscoverable by remember { mutableStateOf(p.isDiscoverable) }
+                    var ghostMode by remember { mutableStateOf(p.ghostMode) }
+                    
+                    // Discoverable toggle
                     Row(
                         modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -413,6 +416,70 @@ fun SettingsScreen(
                                 }
                             }
                         )
+                    }
+                    
+                    // Ghost Mode toggle
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("Ghost Mode", style = MaterialTheme.typography.bodyLarge)
+                            Text("Hide from leaderboards (show as Anonymous)", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                        Switch(
+                            checked = ghostMode,
+                            onCheckedChange = { newValue ->
+                                ghostMode = newValue
+                                scope.launch {
+                                    try { 
+                                        usersApi.updateProfile(UpdateProfileRequest(ghostMode = newValue)) 
+                                        profile = profile?.copy(ghostMode = newValue)
+                                        snackbarMessage = if (newValue) "Ghost mode enabled" else "Ghost mode disabled"
+                                    } catch (_: Exception) {
+                                        ghostMode = !newValue
+                                        snackbarMessage = "Failed to update ghost mode"
+                                    }
+                                }
+                            }
+                        )
+                    }
+                }
+                
+                // Export Data button
+                var isExporting by remember { mutableStateOf(false) }
+                Row(
+                   modifier = Modifier.fillMaxWidth().clickable(enabled = !isExporting) { 
+                       isExporting = true
+                       scope.launch {
+                           try {
+                               val response = usersApi.exportData()
+                               if (response.isSuccessful) {
+                                   val data = response.body()
+                                   // Copy JSON to clipboard
+                                   val json = data?.toString() ?: "{}"
+                                   clipboardManager.setText(AnnotatedString(json))
+                                   snackbarMessage = "Data copied to clipboard"
+                               } else {
+                                   snackbarMessage = "Failed to export data"
+                               }
+                           } catch (_: Exception) {
+                               snackbarMessage = "Error exporting data"
+                           }
+                           isExporting = false
+                       }
+                   }.padding(vertical = 12.dp),
+                   horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Column {
+                        Text("Export My Data", style = MaterialTheme.typography.bodyLarge)
+                        Text("Download all your data as JSON", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    if (isExporting) {
+                        CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                    } else {
+                        Icon(Icons.Default.ArrowBack, contentDescription = null, modifier = Modifier.rotate(180f))
                     }
                 }
                 
