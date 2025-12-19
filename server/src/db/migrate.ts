@@ -296,6 +296,18 @@ const migrations = [
         CREATE INDEX IF NOT EXISTS idx_events_timestamp ON events(timestamp);
       `,
   },
+  {
+    name: '009_leaderboard_performance',
+    sql: `
+        -- Composite index for leaderboard queries (ORDER BY week_start, total_points DESC)
+        CREATE INDEX IF NOT EXISTS idx_weekly_scores_week_points 
+        ON weekly_scores(week_start, total_points DESC);
+        
+        -- Index for faster user lookups in leaderboard JOINs
+        CREATE INDEX IF NOT EXISTS idx_weekly_scores_user_week 
+        ON weekly_scores(user_id, week_start);
+      `,
+  },
 ];
 
 async function migrate() {
