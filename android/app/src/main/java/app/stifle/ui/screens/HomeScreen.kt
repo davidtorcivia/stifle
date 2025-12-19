@@ -255,19 +255,7 @@ fun HomeScreen(
     }
 }
 
-                }
-            }
-            
-            Spacer(modifier = Modifier.height(8.dp))
-            
-            Text(
-                text = "Lock your phone to start a new streak",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.7f)
-            )
-        }
-    }
-}
+
 
 private fun formatDuration(seconds: Int): String {
     val hours = seconds / 3600
