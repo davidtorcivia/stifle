@@ -45,9 +45,11 @@ fun RegisterScreen(
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Back")
                     }
-                }
+                },
+                windowInsets = androidx.compose.foundation.layout.WindowInsets(0, 0, 0, 0)
             )
-        }
+        },
+        contentWindowInsets = androidx.compose.foundation.layout.WindowInsets(0, 0, 0, 0)
     ) { padding ->
         Column(
             modifier = Modifier

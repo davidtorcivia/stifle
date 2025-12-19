@@ -53,8 +53,9 @@ android {
             buildConfigField("String", "API_BASE_URL", "\"http://10.0.2.2:3000\"")
         }
         release {
-            isMinifyEnabled = true
-            isShrinkResources = true
+            // Temporarily disabled minification to debug ParameterizedType crash
+            isMinifyEnabled = false
+            isShrinkResources = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"

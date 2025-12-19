@@ -150,12 +150,14 @@ private fun WelcomePage() {
     }
     
     Box(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(bottom = 140.dp), // Account for bottom buttons/indicators
         contentAlignment = Alignment.Center
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.padding(48.dp)
+            modifier = Modifier.padding(horizontal = 48.dp)
         ) {
             AnimatedVisibility(
                 visible = visible,
@@ -204,12 +206,14 @@ private fun HowItWorksPage() {
     }
     
     Box(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(bottom = 140.dp),
         contentAlignment = Alignment.Center
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.padding(48.dp)
+            modifier = Modifier.padding(horizontal = 48.dp)
         ) {
             AnimatedVisibility(
                 visible = visible,
@@ -313,12 +317,14 @@ private fun PermissionsPage(
     }
     
     Box(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(bottom = 140.dp),
         contentAlignment = Alignment.Center
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.padding(48.dp)
+            modifier = Modifier.padding(horizontal = 48.dp)
         ) {
             AnimatedVisibility(
                 visible = visible,

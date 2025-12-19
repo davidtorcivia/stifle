@@ -434,10 +434,10 @@ interface FriendsApi {
     suspend fun removeFriend(@retrofit2.http.Path("id") friendId: String): Response<Unit>
 
     @POST("friends/block")
-    suspend fun blockUser(@Body request: BlockUserRequest): Response<Any>
+    suspend fun blockUser(@Body request: BlockUserRequest): Response<Unit>
 
     @retrofit2.http.DELETE("friends/block/{id}")
-    suspend fun unblockUser(@retrofit2.http.Path("id") userId: String): Response<Any>
+    suspend fun unblockUser(@retrofit2.http.Path("id") userId: String): Response<Unit>
 
     @GET("friends/blocked")
     suspend fun getBlockedUsers(): Response<BlockedUsersResponse>
