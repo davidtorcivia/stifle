@@ -173,7 +173,6 @@ fun StifleNavHost(
             
             composable("home") {
                 HomeScreen(
-                    eventRepository = container.eventRepository,
                     authRepository = container.authRepository,
                     usersApi = container.usersApi,
                     onNavigateToSettings = {

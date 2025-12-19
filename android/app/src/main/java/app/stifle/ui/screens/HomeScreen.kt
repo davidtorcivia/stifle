@@ -21,26 +21,20 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import app.stifle.data.repository.AuthRepository
-import app.stifle.data.repository.EventRepository
 import app.stifle.network.LastStreak
 import app.stifle.network.UserStats
 import app.stifle.network.UsersApi
 import app.stifle.network.WeeklySummary
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
-    eventRepository: EventRepository,
     authRepository: AuthRepository,
     usersApi: UsersApi,
     onNavigateToSettings: () -> Unit,
     onLogout: () -> Unit
 ) {
-    var currentStreakSeconds by remember { mutableStateOf(0) }
-    var isInStreak by remember { mutableStateOf(false) }
-    var showMenu by remember { mutableStateOf(false) } // This state is no longer needed but kept for minimal diff
     var stats by remember { mutableStateOf<UserStats?>(null) }
     var weeklySummary by remember { mutableStateOf<WeeklySummary?>(null) }
     var isRefreshing by remember { mutableStateOf(false) }
@@ -60,17 +54,6 @@ fun HomeScreen(
                 weeklySummary = summaryResponse.body()
             }
         } catch (_: Exception) {}
-    }
-    
-    // Update streak every second
-    LaunchedEffect(Unit) {
-        while (true) {
-            try {
-                isInStreak = eventRepository.isInStreak()
-                currentStreakSeconds = eventRepository.getCurrentStreakSeconds()
-            } catch (_: Exception) {}
-            delay(1000)
-        }
     }
     
     // Refresh stats function
@@ -158,33 +141,41 @@ fun HomeScreen(
             Spacer(modifier = Modifier.height(8.dp))
             
             // === HERO SECTION ===
-            if (isInStreak) {
+            // Show last streak info or encouraging message
+            val lastStreak = stats?.lastStreak
+            if (lastStreak != null && lastStreak.durationSeconds >= 600) {
+                // Show last meaningful streak
                 Text(
-                    text = "Currently Stifling",
-                    style = MaterialTheme.typography.bodyLarge,
-                    fontStyle = androidx.compose.ui.text.font.FontStyle.Italic,
-                    color = MaterialTheme.colorScheme.tertiary
+                    text = "Last Session",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-                
                 Text(
-                    text = formatDuration(currentStreakSeconds),
-                    style = MaterialTheme.typography.displayLarge.copy(fontSize = 80.sp),
-                    fontWeight = FontWeight.Normal,
+                    text = formatDuration(lastStreak.durationSeconds),
+                    style = MaterialTheme.typography.displayLarge.copy(fontSize = 64.sp),
+                    fontWeight = FontWeight.Light,
                     color = MaterialTheme.colorScheme.onSurface,
-                    lineHeight = 80.sp
+                    fontFamily = androidx.compose.ui.text.font.FontFamily.Serif
+                )
+                Text(
+                    text = "+${String.format("%.0f", lastStreak.pointsEarned)} points",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.primary
                 )
             } else {
+                // No meaningful streak yet
                 Text(
                     text = "Go Offline",
                     style = MaterialTheme.typography.headlineMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    fontFamily = androidx.compose.ui.text.font.FontFamily.Serif,
+                    color = MaterialTheme.colorScheme.onSurface
                 )
                 Spacer(modifier = Modifier.height(16.dp))
                 Text(
-                    text = "The real world is waiting.",
+                    text = "Lock your phone for 10+ minutes to earn points.",
                     style = MaterialTheme.typography.bodyLarge,
-                    fontStyle = androidx.compose.ui.text.font.FontStyle.Italic,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center
                 )
             }
             
