@@ -312,73 +312,72 @@ fun SettingsScreen(
                 )
                 Divider(modifier = Modifier.padding(vertical = 12.dp), color = MaterialTheme.colorScheme.outlineVariant)
                 
-                settings?.let { s ->
-                    var enabled by remember { mutableStateOf(s.enabled) }
-                    
-                    // Permission launcher
-                    val launcher = androidx.activity.compose.rememberLauncherForActivityResult(
-                        contract = androidx.activity.result.contract.ActivityResultContracts.RequestPermission(),
-                        onResult = { isGranted ->
-                            if (isGranted) {
-                                enabled = true
-                                scope.launch {
-                                    isSaving = true
-                                    try { usersApi.updateTemptationSettings(UpdateTemptationRequest(enabled = true)) } catch (_: Exception) {}
-                                    isSaving = false
-                                }
-                            } else {
-                                enabled = false
-                                // Show snackbar or alert explaining why (optional)
+                val reminderEnabled = settings?.enabled ?: false
+                var enabled by remember(settings) { mutableStateOf(reminderEnabled) }
+                
+                // Permission launcher
+                val launcher = androidx.activity.compose.rememberLauncherForActivityResult(
+                    contract = androidx.activity.result.contract.ActivityResultContracts.RequestPermission(),
+                    onResult = { isGranted ->
+                        if (isGranted) {
+                            enabled = true
+                            scope.launch {
+                                isSaving = true
+                                try { usersApi.updateTemptationSettings(UpdateTemptationRequest(enabled = true)) } catch (_: Exception) {}
+                                isSaving = false
                             }
+                        } else {
+                            enabled = false
                         }
-                    )
-                    
-                    Row(
-                        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text("Gentle nudges", style = MaterialTheme.typography.bodyLarge)
-                            Text("Encouragement to stay focused", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        }
-                        Switch(
-                            checked = enabled,
-                            onCheckedChange = { newValue ->
-                                if (newValue) {
-                                    // Check permission
-                                    if (app.stifle.notifications.TemptationManager.hasNotificationPermission(context)) {
+                    }
+                )
+                
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("Gentle nudges", style = MaterialTheme.typography.bodyLarge)
+                        Text("Encouragement to stay focused", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    Switch(
+                        checked = enabled,
+                        enabled = settings != null,
+                        onCheckedChange = { newValue ->
+                            if (newValue) {
+                                // Check permission
+                                if (app.stifle.notifications.TemptationManager.hasNotificationPermission(context)) {
+                                    enabled = true
+                                    scope.launch {
+                                        isSaving = true
+                                        try { usersApi.updateTemptationSettings(UpdateTemptationRequest(enabled = true)) } catch (_: Exception) {}
+                                        isSaving = false
+                                    }
+                                } else {
+                                    // Request permission - specific to Android 13+
+                                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+                                        launcher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+                                    } else {
+                                        // Should be granted automatically below 13
                                         enabled = true
                                         scope.launch {
                                             isSaving = true
                                             try { usersApi.updateTemptationSettings(UpdateTemptationRequest(enabled = true)) } catch (_: Exception) {}
                                             isSaving = false
                                         }
-                                    } else {
-                                        // Request permission - specific to Android 13+
-                                        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
-                                            launcher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
-                                        } else {
-                                            // Should be granted automatically below 13
-                                            enabled = true
-                                            scope.launch {
-                                                isSaving = true
-                                                try { usersApi.updateTemptationSettings(UpdateTemptationRequest(enabled = true)) } catch (_: Exception) {}
-                                                isSaving = false
-                                            }
-                                        }
-                                    }
-                                } else {
-                                    enabled = false
-                                    scope.launch {
-                                        isSaving = true
-                                        try { usersApi.updateTemptationSettings(UpdateTemptationRequest(enabled = false)) } catch (_: Exception) {}
-                                        isSaving = false
                                     }
                                 }
+                            } else {
+                                enabled = false
+                                scope.launch {
+                                    isSaving = true
+                                    try { usersApi.updateTemptationSettings(UpdateTemptationRequest(enabled = false)) } catch (_: Exception) {}
+                                    isSaving = false
+                                }
                             }
-                        )
-                    }
+                        }
+                    )
                 }
                 
                 Spacer(modifier = Modifier.height(32.dp))
@@ -392,64 +391,67 @@ fun SettingsScreen(
                 )
                 Divider(modifier = Modifier.padding(vertical = 12.dp), color = MaterialTheme.colorScheme.outlineVariant)
 
-                profile?.let { p ->
-                    var isDiscoverable by remember { mutableStateOf(p.isDiscoverable) }
-                    var ghostMode by remember { mutableStateOf(p.ghostMode) }
-                    
-                    // Discoverable toggle
-                    Row(
-                        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text("Discoverable", style = MaterialTheme.typography.bodyLarge)
-                            Text("Allow others to find you by email or username", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        }
-                        Switch(
-                            checked = isDiscoverable,
-                            onCheckedChange = { newValue ->
-                                isDiscoverable = newValue
-                                scope.launch {
-                                    try { 
-                                        usersApi.updateProfile(UpdateProfileRequest(isDiscoverable = newValue)) 
-                                        profile = profile?.copy(isDiscoverable = newValue)
-                                    } catch (_: Exception) {
-                                        isDiscoverable = !newValue
-                                        snackbarMessage = "Failed to update privacy settings"
-                                    }
+                val pDiscoverable = profile?.isDiscoverable ?: true
+                val pGhostMode = profile?.ghostMode ?: false
+                
+                var isDiscoverable by remember(profile) { mutableStateOf(pDiscoverable) }
+                var ghostMode by remember(profile) { mutableStateOf(pGhostMode) }
+                
+                // Discoverable toggle
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("Discoverable", style = MaterialTheme.typography.bodyLarge)
+                        Text("Allow others to find you by email or username", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    Switch(
+                        checked = isDiscoverable,
+                        enabled = profile != null,
+                        onCheckedChange = { newValue ->
+                            isDiscoverable = newValue
+                            scope.launch {
+                                try { 
+                                    usersApi.updateProfile(UpdateProfileRequest(isDiscoverable = newValue)) 
+                                    profile = profile?.copy(isDiscoverable = newValue)
+                                } catch (_: Exception) {
+                                    isDiscoverable = !newValue
+                                    snackbarMessage = "Failed to update privacy settings"
                                 }
                             }
-                        )
-                    }
-                    
-                    // Ghost Mode toggle
-                    Row(
-                        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text("Ghost Mode", style = MaterialTheme.typography.bodyLarge)
-                            Text("Hide from leaderboards (show as Anonymous)", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
-                        Switch(
-                            checked = ghostMode,
-                            onCheckedChange = { newValue ->
-                                ghostMode = newValue
-                                scope.launch {
-                                    try { 
-                                        usersApi.updateProfile(UpdateProfileRequest(ghostMode = newValue)) 
-                                        profile = profile?.copy(ghostMode = newValue)
-                                        snackbarMessage = if (newValue) "Ghost mode enabled" else "Ghost mode disabled"
-                                    } catch (_: Exception) {
-                                        ghostMode = !newValue
-                                        snackbarMessage = "Failed to update ghost mode"
-                                    }
+                    )
+                }
+                
+                // Ghost Mode toggle
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("Ghost Mode", style = MaterialTheme.typography.bodyLarge)
+                        Text("Hide from leaderboards (show as Anonymous)", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    Switch(
+                        checked = ghostMode,
+                        enabled = profile != null,
+                        onCheckedChange = { newValue ->
+                            ghostMode = newValue
+                            scope.launch {
+                                try { 
+                                    usersApi.updateProfile(UpdateProfileRequest(ghostMode = newValue)) 
+                                    profile = profile?.copy(ghostMode = newValue)
+                                    snackbarMessage = if (newValue) "Ghost mode enabled" else "Ghost mode disabled"
+                                } catch (_: Exception) {
+                                    ghostMode = !newValue
+                                    snackbarMessage = "Failed to update ghost mode"
                                 }
                             }
-                        )
-                    }
+                        }
+                    )
                 }
                 
                 // Export Data button
