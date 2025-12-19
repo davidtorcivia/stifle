@@ -80,6 +80,7 @@ fun SettingsScreen(
                 inviteCodes = invitesResponse.body() ?: emptyList()
             }
         } catch (_: Exception) {}
+        isLoading = false
     }
     
     val themeMode by tokenManager.getThemeModeFlow().collectAsState(initial = "system")
@@ -245,7 +246,21 @@ fun SettingsScreen(
                 Divider(modifier = Modifier.padding(vertical = 12.dp), color = MaterialTheme.colorScheme.outlineVariant)
                 
                 val unusedCodes = inviteCodes.filter { !it.used }
-                if (unusedCodes.isEmpty()) {
+                if (isLoading) {
+                    // Loading placeholder - matches "empty" state layout
+                    Text(
+                        "Loading...",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(vertical = 8.dp)
+                    )
+                    OutlinedButton(
+                        onClick = {},
+                        enabled = false,
+                        shape = androidx.compose.foundation.shape.RoundedCornerShape(4.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) { Text("Generate Invite Code") }
+                } else if (unusedCodes.isEmpty()) {
                     Text(
                         "No invite codes available",
                         style = MaterialTheme.typography.bodyMedium,
