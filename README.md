@@ -95,8 +95,11 @@ NODE_ENV=production
 PORT=3000
 HOST=0.0.0.0
 
-# API Domain (used for CORS and invite links)
-API_DOMAIN=api.stifle.app
+# Your API domain (used for invite links)
+API_DOMAIN=api.yourdomain.com
+
+# CORS - Allow requests from your admin panel and main site
+CORS_ORIGINS=https://admin.yourdomain.com,https://yourdomain.com
 
 # Database (uses Docker internal network)
 DATABASE_URL=postgresql://stifle:<password>@stifle-postgres:5432/stifle
@@ -274,7 +277,7 @@ cd android
 
 ### Step 6: Create Admin User
 
-The seed command creates an admin user with username `admin`, email `admin@stifle.app`, and password `AdminPass123!`. To create additional admins:
+The seed command creates an admin user with username `admin`, email `admin@stifleapp.com`, and password `AdminPass123!`. To create additional admins:
 
 ```bash
 # Generate an invite code

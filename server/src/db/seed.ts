@@ -42,14 +42,14 @@ async function seed() {
 
     const adminResult = await db.query(
         `INSERT INTO users (username, email, password_hash, platform, timezone, tracking_status)
-     VALUES ('admin', 'admin@stifle.app', $1, 'android', 'UTC', 'verified')
+     VALUES ('admin', 'admin@stifleapp.com', $1, 'android', 'UTC', 'verified')
      RETURNING id`,
         [passwordHash]
     );
 
     const adminId = adminResult.rows[0].id;
     console.log('✅ Created admin user');
-    console.log(`   Email: admin@stifle.app`);
+    console.log(`   Email: admin@stifleapp.com`);
     console.log(`   Password: ${adminPassword}`);
     console.log('');
 
