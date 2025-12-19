@@ -40,16 +40,8 @@
             </intent-filter>
         </activity>
 
-        <!-- Screen state receiver (lock/unlock detection) -->
-        <receiver
-            android:name=".tracking.ScreenStateReceiver"
-            android:enabled="true"
-            android:exported="false">
-            <intent-filter>
-                <action android:name="android.intent.action.USER_PRESENT" />
-                <action android:name="android.intent.action.SCREEN_OFF" />
-            </intent-filter>
-        </receiver>
+        <!-- Screen state tracking is handled by ScreenStateAccessibilityService -->
+        <!-- The receiver is registered dynamically there for better reliability -->
 
         <!-- Boot receiver to restart tracking after reboot -->
         <receiver
