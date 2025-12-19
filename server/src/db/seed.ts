@@ -1,17 +1,11 @@
 import { db } from './client.js';
 import crypto from 'crypto';
+import { hashPassword } from '../utils/password.js';
 
 /**
  * Seed script to set up initial data for development/testing
  * Creates: admin user, initial invite codes
  */
-
-// Simple password hashing (same as auth.ts)
-function hashPassword(password: string): string {
-    const salt = crypto.randomBytes(16).toString('hex');
-    const hash = crypto.scryptSync(password, salt, 64).toString('hex');
-    return `${salt}:${hash}`;
-}
 
 function generateInviteCode(): string {
     return crypto.randomBytes(6).toString('hex').toUpperCase();
@@ -43,8 +37,8 @@ async function seed() {
     }
 
     // Create admin user
-    const adminPassword = process.env.ADMIN_PASSWORD || 'admin123';
-    const passwordHash = hashPassword(adminPassword);
+    const adminPassword = process.env.ADMIN_PASSWORD || 'AdminPass123!';
+    const passwordHash = await hashPassword(adminPassword);
 
     const adminResult = await db.query(
         `INSERT INTO users (username, email, password_hash, platform, timezone, tracking_status)

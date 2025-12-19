@@ -40,8 +40,12 @@ export async function buildApp() {
     });
 
     // Plugins
+    // CORS: allow all in dev, restrict in production
+    const corsOrigin = config.NODE_ENV === 'production'
+        ? ['https://stifle.app', 'https://admin.stifle.app', 'https://api.stifle.app']
+        : true;
     await app.register(cors, {
-        origin: true,
+        origin: corsOrigin,
         credentials: true,
     });
 

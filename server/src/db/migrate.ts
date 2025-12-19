@@ -212,6 +212,67 @@ const migrations = [
         ALTER TABLE users ADD COLUMN IF NOT EXISTS is_discoverable BOOLEAN NOT NULL DEFAULT TRUE;
       `,
   },
+  {
+    name: '005_fix_temptation_columns',
+    sql: `
+        -- Fix temptation_settings column names to match code expectations
+        -- Rename quiet_start -> quiet_hours_start, quiet_end -> quiet_hours_end
+        DO $$ 
+        BEGIN
+            IF EXISTS (SELECT 1 FROM information_schema.columns 
+                       WHERE table_name = 'temptation_settings' AND column_name = 'quiet_start') THEN
+                ALTER TABLE temptation_settings RENAME COLUMN quiet_start TO quiet_hours_start;
+            END IF;
+            IF EXISTS (SELECT 1 FROM information_schema.columns 
+                       WHERE table_name = 'temptation_settings' AND column_name = 'quiet_end') THEN
+                ALTER TABLE temptation_settings RENAME COLUMN quiet_end TO quiet_hours_end;
+            END IF;
+        END $$;
+        
+        -- Add quiet_hours columns if they don't exist (for fresh installs after this fix)
+        ALTER TABLE temptation_settings ADD COLUMN IF NOT EXISTS quiet_hours_start TIME DEFAULT '22:00';
+        ALTER TABLE temptation_settings ADD COLUMN IF NOT EXISTS quiet_hours_end TIME DEFAULT '08:00';
+        
+        -- Add frequency_minutes column if it doesn't exist
+        ALTER TABLE temptation_settings ADD COLUMN IF NOT EXISTS frequency_minutes INTEGER NOT NULL DEFAULT 120;
+      `,
+  },
+  {
+    name: '006_fix_push_tokens_constraint',
+    sql: `
+        -- Fix push_tokens unique constraint to match code expectations
+        -- Code uses ON CONFLICT (user_id, platform) but table had UNIQUE (user_id, token)
+        
+        -- Drop the old constraint if it exists
+        DO $$ 
+        BEGIN
+            IF EXISTS (
+                SELECT 1 FROM pg_constraint 
+                WHERE conname = 'push_tokens_user_id_token_key'
+            ) THEN
+                ALTER TABLE push_tokens DROP CONSTRAINT push_tokens_user_id_token_key;
+            END IF;
+        END $$;
+        
+        -- Add the correct constraint (one token per user per platform)
+        -- First, clean up any duplicate platform entries per user (keep newest)
+        DELETE FROM push_tokens a USING push_tokens b
+        WHERE a.user_id = b.user_id 
+          AND a.platform = b.platform 
+          AND a.updated_at < b.updated_at;
+        
+        -- Now add the unique constraint
+        DO $$ 
+        BEGIN
+            IF NOT EXISTS (
+                SELECT 1 FROM pg_constraint 
+                WHERE conname = 'push_tokens_user_id_platform_key'
+            ) THEN
+                ALTER TABLE push_tokens ADD CONSTRAINT push_tokens_user_id_platform_key UNIQUE (user_id, platform);
+            END IF;
+        END $$;
+      `,
+  },
 ];
 
 async function migrate() {

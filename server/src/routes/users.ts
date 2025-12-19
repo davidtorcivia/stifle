@@ -5,6 +5,7 @@ import crypto from 'crypto';
 import { getWeekStartForTimezone } from '../utils/time.js';
 import { scheduleTemptationForUser } from '../services/temptation.service.js';
 import { calculateStreakPoints } from '../utils/scoring.js';
+import { hashPassword, verifyPassword } from '../utils/password.js';
 
 // Password must have: 8+ chars, 1 uppercase, 1 lowercase, 1 number
 const passwordSchema = z.string()
@@ -33,18 +34,7 @@ const changeEmailSchema = z.object({
     password: z.string(), // Require password confirmation for security
 });
 
-// Password hashing helpers
-async function hashPassword(password: string): Promise<string> {
-    const salt = crypto.randomBytes(16).toString('hex');
-    const hash = crypto.scryptSync(password, salt, 64).toString('hex');
-    return `${salt}:${hash}`;
-}
-
-async function verifyPassword(password: string, stored: string): Promise<boolean> {
-    const [salt, hash] = stored.split(':');
-    const testHash = crypto.scryptSync(password, salt, 64).toString('hex');
-    return hash === testHash;
-}
+// Password hashing functions imported from utils/password.js
 
 export async function userRoutes(app: FastifyInstance) {
     // Get current user

@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { db } from '../db/client.js';
 import { adminPreHandler, logAdminAction, getClientIp } from '../utils/adminAuth.js';
 import crypto from 'crypto';
+import { hashPassword } from '../utils/password.js';
 
 // Schema definitions
 const paginationSchema = z.object({
@@ -428,9 +429,7 @@ export async function adminRoutes(app: FastifyInstance) {
         }
 
         // Hash password
-        const salt = crypto.randomBytes(16).toString('hex');
-        const hash = crypto.scryptSync(body.password, salt, 64).toString('hex');
-        const passwordHash = `${salt}:${hash}`;
+        const passwordHash = await hashPassword(body.password);
 
         // Create user
         const userResult = await db.query(
@@ -478,9 +477,7 @@ export async function adminRoutes(app: FastifyInstance) {
         }
 
         // Hash new password
-        const salt = crypto.randomBytes(16).toString('hex');
-        const hash = crypto.scryptSync(body.password, salt, 64).toString('hex');
-        const passwordHash = `${salt}:${hash}`;
+        const passwordHash = await hashPassword(body.password);
 
         // Update password
         await db.query(
@@ -547,12 +544,16 @@ export async function adminRoutes(app: FastifyInstance) {
         const adminId = (request as any).user.id;
 
         const codes: string[] = [];
+        // Calculate expiry date in JS to avoid SQL injection via interval interpolation
+        const expiryDate = new Date();
+        expiryDate.setDate(expiryDate.getDate() + body.expiresInDays);
+
         for (let i = 0; i < body.count; i++) {
             const code = crypto.randomBytes(6).toString('hex').toUpperCase();
             await db.query(
                 `INSERT INTO invite_codes (code, creator_id, expires_at)
-                 VALUES ($1, $2, NOW() + INTERVAL '${body.expiresInDays} days')`,
-                [code, adminId]
+                 VALUES ($1, $2, $3)`,
+                [code, adminId, expiryDate]
             );
             codes.push(code);
         }

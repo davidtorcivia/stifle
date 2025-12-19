@@ -1,6 +1,3 @@
-const BASE_MULTIPLIER = 10;
-const MINIMUM_STREAK_SECONDS = 300; // 5 minutes minimum
-
 /**
  * Calculate points for a streak using "Points Density" scaling.
  * 

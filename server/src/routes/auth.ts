@@ -2,6 +2,7 @@ import { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import crypto from 'crypto';
 import { db } from '../db/client.js';
+import { hashPassword, verifyPassword } from '../utils/password.js';
 
 // Password must have: 8+ chars, 1 uppercase, 1 lowercase, 1 number
 const passwordSchema = z.string()
@@ -40,18 +41,7 @@ const authRateLimit = {
     }),
 };
 
-// Simple password hashing (use bcrypt in production for better security)
-async function hashPassword(password: string): Promise<string> {
-    const salt = crypto.randomBytes(16).toString('hex');
-    const hash = crypto.scryptSync(password, salt, 64).toString('hex');
-    return `${salt}:${hash}`;
-}
-
-async function verifyPassword(password: string, stored: string): Promise<boolean> {
-    const [salt, hash] = stored.split(':');
-    const testHash = crypto.scryptSync(password, salt, 64).toString('hex');
-    return hash === testHash;
-}
+// Password hashing functions imported from utils/password.js
 
 function generateRefreshToken(): string {
     return crypto.randomBytes(32).toString('hex');
