@@ -55,7 +55,10 @@ fun GroupsScreen(
     LaunchedEffect(Unit) {
         when (val result = groupRepository.getGroups()) {
             is Result.Success -> groups = result.data
-            is Result.Error -> { /* TODO: show error */ }
+            is Result.Error -> {
+                errorMessage = result.message
+                isLoading = false
+            }
         }
         isLoading = false
     }
