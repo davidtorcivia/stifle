@@ -41,8 +41,8 @@ async function seed() {
     const passwordHash = await hashPassword(adminPassword);
 
     const adminResult = await db.query(
-        `INSERT INTO users (username, email, password_hash, platform, timezone, tracking_status)
-     VALUES ('admin', 'admin@stifleapp.com', $1, 'android', 'UTC', 'verified')
+        `INSERT INTO users (username, email, password_hash, platform, timezone, tracking_status, role)
+     VALUES ('admin', 'admin@stifleapp.com', $1, 'android', 'UTC', 'verified', 'admin')
      RETURNING id`,
         [passwordHash]
     );
