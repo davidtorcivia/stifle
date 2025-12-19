@@ -108,19 +108,23 @@ fun SettingsScreen(
         },
         contentWindowInsets = WindowInsets(0, 0, 0, 0)
     ) { padding ->
-        if (isLoading) {
-            Box(modifier = Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator()
-            }
-        } else {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding)
-                    .verticalScroll(rememberScrollState())
-                    .padding(horizontal = 24.dp)
-            ) {
-                Spacer(modifier = Modifier.height(16.dp))
+        // Remember scroll state at this level so it persists across loading state changes
+        val scrollState = rememberScrollState()
+        
+        androidx.compose.animation.Crossfade(targetState = isLoading, label = "settings_loading") { loading ->
+            if (loading) {
+                Box(modifier = Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator()
+                }
+            } else {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(padding)
+                        .verticalScroll(scrollState)
+                        .padding(horizontal = 24.dp)
+                ) {
+                    Spacer(modifier = Modifier.height(16.dp))
 
                 // === APPEARANCE ===
                 Text(
@@ -457,24 +461,35 @@ fun SettingsScreen(
                                val response = usersApi.exportData()
                                if (response.isSuccessful) {
                                    val data = response.body()
-                                   // Convert to pretty JSON and save to Downloads
+                                   // Convert to pretty JSON
                                    val gson = com.google.gson.GsonBuilder().setPrettyPrinting().create()
                                    val json = gson.toJson(data)
                                    
-                                   // Save to Downloads folder
+                                   // Save to app's cache directory (no permissions needed)
                                    val timestamp = java.text.SimpleDateFormat("yyyyMMdd_HHmmss", java.util.Locale.US).format(java.util.Date())
                                    val filename = "stifle_export_$timestamp.json"
-                                   
-                                   val downloadsDir = android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOWNLOADS)
-                                   val file = java.io.File(downloadsDir, filename)
+                                   val file = java.io.File(context.cacheDir, filename)
                                    file.writeText(json)
                                    
-                                   snackbarMessage = "Data saved to Downloads/$filename"
+                                   // Share the file using FileProvider
+                                   val uri = androidx.core.content.FileProvider.getUriForFile(
+                                       context,
+                                       "${context.packageName}.fileprovider",
+                                       file
+                                   )
+                                   val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                                       type = "application/json"
+                                       putExtra(Intent.EXTRA_STREAM, uri)
+                                       addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                   }
+                                   context.startActivity(Intent.createChooser(shareIntent, "Export Data"))
+                                   snackbarMessage = "Opening share dialog..."
                                } else {
-                                   snackbarMessage = "Failed to export data"
+                                   snackbarMessage = "Failed to export data: ${response.code()}"
                                }
                            } catch (e: Exception) {
                                snackbarMessage = "Error exporting data: ${e.message}"
+                               android.util.Log.e("SettingsScreen", "Export failed", e)
                            }
                            isExporting = false
                        }
@@ -483,7 +498,7 @@ fun SettingsScreen(
                 ) {
                     Column {
                         Text("Export My Data", style = MaterialTheme.typography.bodyLarge)
-                        Text("Save all your data as JSON to Downloads", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("Share all your data as JSON", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                     if (isExporting) {
                         CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
