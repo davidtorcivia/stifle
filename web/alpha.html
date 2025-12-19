@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stifle Alpha - Download & Install</title>
+    <meta name="description"
+        content="Download the Stifle alpha APK and learn how to install it on your Android device.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@400;500&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <canvas id="bg-canvas"></canvas>
+    <div class="container">
+        <header class="page-header">
+            <a href="index.html" class="back-link">Back</a>
+            <h1 class="page-title">Alpha Access</h1>
+        </header>
+
+        <main class="content">
+            <section class="download-section">
+                <h2>Download Stifle</h2>
+                <p class="version-info">Version 0.1-alpha | Android 8.0+</p>
+
+                <a href="/downloads/stifle-alpha-v0.1.apk" class="btn btn-primary btn-large" download>
+                    Download APK
+                </a>
+
+                <p class="note">You'll need an invite code to create an account.</p>
+            </section>
+
+            <section class="install-guide">
+                <h2>Installation Guide</h2>
+                <p class="intro">Since Stifle is in alpha, you'll install it directly from the APK. This requires a few
+                    extra steps on Android.</p>
+
+                <div class="steps">
+                    <div class="step">
+                        <span class="step-number">1</span>
+                        <div class="step-content">
+                            <h3>Download the APK</h3>
+                            <p>Tap the download button above. Your browser may warn you about APK files—this is normal
+                                for apps not from the Play Store.</p>
+                        </div>
+                    </div>
+
+                    <div class="step">
+                        <span class="step-number">2</span>
+                        <div class="step-content">
+                            <h3>Allow Installation</h3>
+                            <p>When you try to install, Android may ask you to allow your browser or file manager to
+                                install unknown apps. Tap <strong>Settings</strong> and enable <strong>"Allow from this
+                                    source"</strong>.</p>
+                        </div>
+                    </div>
+
+                    <div class="step">
+                        <span class="step-number">3</span>
+                        <div class="step-content">
+                            <h3>Install Stifle</h3>
+                            <p>Open the downloaded APK and tap <strong>Install</strong>. Google Play Protect may scan it
+                                first—this is normal.</p>
+                        </div>
+                    </div>
+
+                    <div class="step">
+                        <span class="step-number">4</span>
+                        <div class="step-content">
+                            <h3>Complete Onboarding</h3>
+                            <p>Open Stifle and follow the setup. You'll need to grant <strong>accessibility
+                                    permissions</strong> for tracking.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="accessibility-section">
+                <h2>Enabling Accessibility</h2>
+                <p class="intro">Android 13+ has extra security for sideloaded apps. If you see "Restricted setting"
+                    when trying to enable accessibility:</p>
+
+                <div class="steps">
+                    <div class="step">
+                        <span class="step-number">1</span>
+                        <div class="step-content">
+                            <h3>Open App Settings</h3>
+                            <p>Go to <strong>Settings, then Apps, then Stifle</strong></p>
+                        </div>
+                    </div>
+
+                    <div class="step">
+                        <span class="step-number">2</span>
+                        <div class="step-content">
+                            <h3>Allow Restricted Settings</h3>
+                            <p>Tap the <strong>menu</strong> (three dots) in the top right, then tap <strong>"Allow
+                                    restricted settings"</strong></p>
+                        </div>
+                    </div>
+
+                    <div class="step">
+                        <span class="step-number">3</span>
+                        <div class="step-content">
+                            <h3>Enable Accessibility</h3>
+                            <p>Now go back to the app and complete the accessibility setup. The toggle should work now.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="info-box">
+                    <p><strong>Why is this needed?</strong></p>
+                    <p>Stifle uses accessibility services to detect when you lock your phone—that's how we track
+                        streaks. We never monitor what apps you use or what you type. Once Stifle is on the Play Store,
+                        this extra step won't be required.</p>
+                </div>
+            </section>
+
+            <section class="troubleshooting">
+                <h2>Having Issues?</h2>
+                <p>If something isn't working, try:</p>
+                <ul>
+                    <li>Restarting your phone after enabling accessibility</li>
+                    <li>Making sure battery optimization is disabled for Stifle</li>
+                    <li>Checking that you're connected to the internet</li>
+                </ul>
+            </section>
+        </main>
+
+        <footer>
+            <p>&copy; <span id="year"></span> Stifle. Less phone, more life.</p>
+        </footer>
+    </div>
+
+    <script src="shader.js"></script>
+    <script>
+        document.getElementById('year').textContent = new Date().getFullYear();
+    </script>
+</body>
+
+</html>
