@@ -40,6 +40,7 @@ fun GroupsScreen(
     var showJoinDialog by remember { mutableStateOf(false) }
     var code by remember { mutableStateOf("") } // Moved state up
     var showCreateDialog by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf<String?>(null) } // Added error message state
     
     // Handle initial join code
     LaunchedEffect(initialJoinCode) {
