@@ -11,6 +11,7 @@ import { groupRoutes } from './routes/groups.js';
 import { friendsRoutes } from './routes/friends.js';
 import { adminRoutes } from './routes/admin.js';
 import { waitlistRoutes } from './routes/waitlist.js';
+import './services/cleanup.service.js'; // Run event cleanup on startup
 
 export async function buildApp() {
     const app = Fastify({

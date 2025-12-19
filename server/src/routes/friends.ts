@@ -351,6 +351,7 @@ export async function friendsRoutes(app: FastifyInstance) {
                 u.id,
                 u.username,
                 u.platform,
+                u.ghost_mode,
                 COALESCE(ws.total_points, 0) as total_points,
                 COALESCE(ws.streak_count, 0) as streak_count,
                 COALESCE(ws.longest_streak, 0) as longest_streak,
@@ -363,17 +364,21 @@ export async function friendsRoutes(app: FastifyInstance) {
             [userId]
         );
 
-        // Calculate rank
-        const leaderboard = result.rows.map((row, index) => ({
-            rank: index + 1,
-            id: row.id,
-            username: row.username,
-            platform: row.platform,
-            points: Number(row.total_points),
-            streakCount: row.streak_count,
-            longestStreak: row.longest_streak,
-            isCurrentUser: row.is_current_user,
-        }));
+        // Calculate rank - ghost users show as Anonymous (except to themselves)
+        const leaderboard = result.rows.map((row, index) => {
+            const isGhost = row.ghost_mode && !row.is_current_user;
+            return {
+                rank: index + 1,
+                id: isGhost ? null : row.id,
+                username: isGhost ? 'Anonymous' : row.username,
+                platform: isGhost ? null : row.platform,
+                points: isGhost ? null : Number(row.total_points),
+                streakCount: isGhost ? null : row.streak_count,
+                longestStreak: isGhost ? null : row.longest_streak,
+                isCurrentUser: row.is_current_user,
+                isGhost,
+            };
+        });
 
         // Find current user's rank
         const currentUserRank = leaderboard.find(u => u.isCurrentUser)?.rank || 0;

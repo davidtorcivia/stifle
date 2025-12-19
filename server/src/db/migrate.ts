@@ -286,6 +286,16 @@ const migrations = [
         CREATE INDEX IF NOT EXISTS idx_waitlist_email ON waitlist(email);
       `,
   },
+  {
+    name: '008_privacy_features',
+    sql: `
+        -- Ghost mode: users can hide from leaderboards while still participating
+        ALTER TABLE users ADD COLUMN IF NOT EXISTS ghost_mode BOOLEAN NOT NULL DEFAULT FALSE;
+        
+        -- Index for event cleanup queries
+        CREATE INDEX IF NOT EXISTS idx_events_timestamp ON events(timestamp);
+      `,
+  },
 ];
 
 async function migrate() {

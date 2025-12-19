@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Privacy - Stifle</title>
+    <meta name="description"
+        content="Stifle's commitment to user privacy. Open source, minimal data collection, full data control.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@400;500&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <canvas id="bg-canvas"></canvas>
+    <div class="container">
+        <header class="page-header">
+            <a href="index.html" class="back-link">Back</a>
+            <h1 class="page-title">Privacy</h1>
+        </header>
+
+        <main class="content">
+            <section class="privacy-section">
+                <h2>Your Privacy Matters</h2>
+                <p class="intro">Stifle is built with privacy as a core principle. We believe you should be in complete
+                    control of your data, and we've designed our app to collect as little as possible.</p>
+            </section>
+
+            <section class="privacy-section">
+                <h2>What We Collect</h2>
+                <div class="privacy-list">
+                    <div class="privacy-item">
+                        <h3>Lock/Unlock Timestamps</h3>
+                        <p>We only record <strong>when</strong> you lock and unlock your phone. That's it. We use this
+                            to calculate your streaks and points.</p>
+                    </div>
+                    <div class="privacy-item">
+                        <h3>What We Don't Collect</h3>
+                        <ul>
+                            <li>Which apps you use</li>
+                            <li>What you type or read</li>
+                            <li>Your location</li>
+                            <li>Your contacts</li>
+                            <li>Notification content</li>
+                            <li>Screen content</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <section class="privacy-section">
+                <h2>Your Data Rights</h2>
+                <div class="privacy-list">
+                    <div class="privacy-item">
+                        <h3>Export Your Data</h3>
+                        <p>You can export all your data at any time in JSON format. This includes your profile, events,
+                            scores, and settings.</p>
+                    </div>
+                    <div class="privacy-item">
+                        <h3>Delete Your Account</h3>
+                        <p>You can permanently delete your account and all associated data from the app settings. This
+                            action is irreversible.</p>
+                    </div>
+                    <div class="privacy-item">
+                        <h3>Automatic Data Cleanup</h3>
+                        <p>We automatically delete raw event data older than 30 days. Your weekly scores are preserved
+                            for tracking progress, but the detailed timestamps are removed.</p>
+                    </div>
+                    <div class="privacy-item">
+                        <h3>Ghost Mode</h3>
+                        <p>Enable Ghost Mode to hide from leaderboards while still participating in group challenges.
+                            Your friends will see you as "Anonymous".</p>
+                    </div>
+                </div>
+            </section>
+
+            <section class="privacy-section">
+                <h2>Open Source</h2>
+                <p>Stifle is open source. This means:</p>
+                <ul>
+                    <li><strong>Transparency:</strong> You can inspect exactly what data we collect and how we handle it
+                    </li>
+                    <li><strong>Trust:</strong> Security researchers can audit our code for vulnerabilities</li>
+                    <li><strong>Community:</strong> Anyone can contribute improvements to the project</li>
+                </ul>
+                <p>We believe open source is the gold standard for privacy-respecting software.</p>
+            </section>
+
+            <section class="privacy-section">
+                <h2>Security</h2>
+                <div class="privacy-list">
+                    <div class="privacy-item">
+                        <h3>Encrypted Storage</h3>
+                        <p>Your authentication tokens are encrypted on your device using AES-256 encryption.</p>
+                    </div>
+                    <div class="privacy-item">
+                        <h3>Secure Authentication</h3>
+                        <p>Passwords are hashed using scrypt, and we use short-lived JWTs with refresh token rotation.
+                        </p>
+                    </div>
+                    <div class="privacy-item">
+                        <h3>No Third-Party Tracking</h3>
+                        <p>We don't use analytics SDKs, ad networks, or any third-party services that could track you.
+                        </p>
+                    </div>
+                </div>
+            </section>
+
+            <section class="privacy-section">
+                <h2>Questions?</h2>
+                <p>If you have any questions about our privacy practices, please reach out. We're committed to being
+                    transparent about how we handle your data.</p>
+            </section>
+        </main>
+
+        <footer>
+            <p>&copy; <span id="year"></span> Stifle. Less phone, more life.</p>
+        </footer>
+    </div>
+
+    <script src="shader.js"></script>
+    <script>
+        document.getElementById('year').textContent = new Date().getFullYear();
+    </script>
+</body>
+
+</html>

@@ -18,6 +18,7 @@ const updateUserSchema = z.object({
     username: z.string().min(3).max(30).regex(/^[a-zA-Z0-9_]+$/).optional(),
     timezone: z.string().optional(),
     isDiscoverable: z.boolean().optional(),
+    ghostMode: z.boolean().optional(),
 });
 
 const updateTrackingSchema = z.object({
@@ -44,7 +45,7 @@ export async function userRoutes(app: FastifyInstance) {
         const userId = (request as any).user.id;
 
         const result = await db.query(
-            `SELECT id, username, email, timezone, platform, tracking_status, created_at, is_discoverable
+            `SELECT id, username, email, timezone, platform, tracking_status, created_at, is_discoverable, ghost_mode
        FROM users WHERE id = $1`,
             [userId]
         );
@@ -82,6 +83,7 @@ export async function userRoutes(app: FastifyInstance) {
                 longestStreak: weeklyScore.longest_streak,
             },
             isDiscoverable: user.is_discoverable,
+            ghostMode: user.ghost_mode,
         };
     });
 
@@ -423,6 +425,11 @@ export async function userRoutes(app: FastifyInstance) {
             values.push(body.isDiscoverable);
         }
 
+        if (body.ghostMode !== undefined) {
+            updates.push(`ghost_mode = $${paramIndex++}`);
+            values.push(body.ghostMode);
+        }
+
         if (updates.length === 0) {
             return { success: true };
         }
@@ -726,5 +733,85 @@ export async function userRoutes(app: FastifyInstance) {
         }
 
         return { success: true };
+    });
+
+    // Export all user data (GDPR compliance)
+    app.get('/me/export', {
+        preHandler: [(app as any).authenticate],
+    }, async (request) => {
+        const userId = (request as any).user.id;
+
+        // Get profile
+        const profileResult = await db.query(
+            `SELECT id, username, email, timezone, platform, tracking_status, 
+                    created_at, is_discoverable, ghost_mode
+             FROM users WHERE id = $1`,
+            [userId]
+        );
+        const profile = profileResult.rows[0];
+
+        // Get all events
+        const eventsResult = await db.query(
+            `SELECT event_type, timestamp, source, created_at
+             FROM events WHERE user_id = $1
+             ORDER BY timestamp DESC`,
+            [userId]
+        );
+
+        // Get all weekly scores
+        const scoresResult = await db.query(
+            `SELECT week_start, total_points, streak_count, longest_streak, calculated_at
+             FROM weekly_scores WHERE user_id = $1
+             ORDER BY week_start DESC`,
+            [userId]
+        );
+
+        // Get temptation settings
+        const settingsResult = await db.query(
+            `SELECT enabled, intensity, quiet_hours_start, quiet_hours_end, frequency_minutes
+             FROM temptation_settings WHERE user_id = $1`,
+            [userId]
+        );
+
+        // Get groups membership
+        const groupsResult = await db.query(
+            `SELECT g.name, gm.role, gm.joined_at
+             FROM group_members gm
+             JOIN groups g ON g.id = gm.group_id
+             WHERE gm.user_id = $1`,
+            [userId]
+        );
+
+        // Get friendships
+        const friendsResult = await db.query(
+            `SELECT u.username, f.status, f.created_at
+             FROM friendships f
+             JOIN users u ON (
+                CASE WHEN f.requester_id = $1 THEN f.addressee_id ELSE f.requester_id END = u.id
+             )
+             WHERE (f.requester_id = $1 OR f.addressee_id = $1)
+               AND f.status = 'accepted'`,
+            [userId]
+        );
+
+        return {
+            exportedAt: new Date().toISOString(),
+            profile: {
+                id: profile.id,
+                username: profile.username,
+                email: profile.email,
+                timezone: profile.timezone,
+                platform: profile.platform,
+                trackingStatus: profile.tracking_status,
+                createdAt: profile.created_at,
+                isDiscoverable: profile.is_discoverable,
+                ghostMode: profile.ghost_mode,
+            },
+            events: eventsResult.rows,
+            weeklyScores: scoresResult.rows,
+            temptationSettings: settingsResult.rows[0] || null,
+            groups: groupsResult.rows,
+            friends: friendsResult.rows,
+        };
     });
 }
