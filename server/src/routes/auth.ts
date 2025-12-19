@@ -105,7 +105,7 @@ export async function authRoutes(app: FastifyInstance) {
 
         await db.query(
             `INSERT INTO refresh_tokens (user_id, token_hash, expires_at)
-       VALUES ($1, $2, NOW() + INTERVAL '7 days')`,
+       VALUES ($1, $2, NOW() + INTERVAL '90 days')`,
             [user.id, refreshHash]
         );
 
@@ -154,8 +154,9 @@ export async function authRoutes(app: FastifyInstance) {
             );
         }
 
-        // Revoke old refresh tokens
-        await db.query('DELETE FROM refresh_tokens WHERE user_id = $1', [user.id]);
+        // Note: We don't delete old refresh tokens on login anymore.
+        // This prevents accidental logout when the app re-authenticates.
+        // Old tokens naturally expire after 90 days.
 
         // Generate new tokens
         const accessToken = app.jwt.sign({ id: user.id, username: user.username });
@@ -164,7 +165,7 @@ export async function authRoutes(app: FastifyInstance) {
 
         await db.query(
             `INSERT INTO refresh_tokens (user_id, token_hash, expires_at)
-       VALUES ($1, $2, NOW() + INTERVAL '7 days')`,
+       VALUES ($1, $2, NOW() + INTERVAL '90 days')`,
             [user.id, refreshHash]
         );
 
@@ -202,8 +203,13 @@ export async function authRoutes(app: FastifyInstance) {
 
         const { user_id, username } = tokenResult.rows[0];
 
-        // Delete old token
-        await db.query('DELETE FROM refresh_tokens WHERE token_hash = $1', [tokenHash]);
+        // Mark old token as expiring soon (5 min grace period for network issues)
+        // This prevents permanent lockout if response doesn't reach client
+        await db.query(
+            `UPDATE refresh_tokens SET expires_at = NOW() + INTERVAL '5 minutes'
+       WHERE token_hash = $1`,
+            [tokenHash]
+        );
 
         // Generate new tokens
         const accessToken = app.jwt.sign({ id: user_id, username });
@@ -212,7 +218,7 @@ export async function authRoutes(app: FastifyInstance) {
 
         await db.query(
             `INSERT INTO refresh_tokens (user_id, token_hash, expires_at)
-       VALUES ($1, $2, NOW() + INTERVAL '7 days')`,
+       VALUES ($1, $2, NOW() + INTERVAL '90 days')`,
             [user_id, newRefreshHash]
         );
 
