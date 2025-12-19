@@ -26,6 +26,14 @@ import kotlinx.coroutines.launch
  */
 class ScreenStateReceiver : BroadcastReceiver() {
     
+    companion object {
+        // Static map to track last processed timestamp for each action
+        // This prevents race conditions when both Manifest receiver and 
+        // AccessibilityService receiver fire for the same event.
+        private val lastProcessed = java.util.concurrent.ConcurrentHashMap<String, Long>()
+        private const val DEBOUNCE_MS = 500L // 500ms debounce to prevent duplicates
+    }
+    
     // Use SupervisorJob so one failure doesn't cancel other operations
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
     
@@ -36,9 +44,21 @@ class ScreenStateReceiver : BroadcastReceiver() {
         }
         val eventRepository = app.container.eventRepository
         
-        Log.d("ScreenStateReceiver", "Received action: ${intent.action}")
+        val action = intent.action ?: return
         
-        when (intent.action) {
+        // Debounce: Check if we just processed this exact action
+        val now = System.currentTimeMillis()
+        val lastTime = lastProcessed[action] ?: 0L
+        if (now - lastTime < DEBOUNCE_MS) {
+            Log.d("ScreenStateReceiver", "Debouncing duplicate action: $action (diff: ${now - lastTime}ms)")
+            // For SCREEN_ON we still want to log, but return for logic-heavy events
+            if (action != Intent.ACTION_SCREEN_ON) return
+        }
+        lastProcessed[action] = now
+        
+        Log.d("ScreenStateReceiver", "Processing action: $action")
+        
+        when (action) {
             Intent.ACTION_USER_PRESENT -> {
                 // User unlocked the device
                 scope.launch {
