@@ -3,13 +3,13 @@ import { db } from '../db/client.js';
 /**
  * Event Cleanup Service
  * 
- * Deletes raw event data older than 30 days to protect user privacy.
+ * Deletes raw event data older than 14 days to protect user privacy.
  * Weekly scores are preserved for historical tracking.
  * 
  * This should be run periodically (e.g., daily via cron or on server startup).
  */
 
-const RETENTION_DAYS = 30;
+const RETENTION_DAYS = 14;
 
 export async function cleanupOldEvents(): Promise<{ deleted: number }> {
     console.log(`🧹 Cleaning up events older than ${RETENTION_DAYS} days...`);

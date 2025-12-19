@@ -53,45 +53,50 @@
 
             <section class="privacy-section">
                 <h2>The Curve</h2>
-                <p>Points aren't linear. We use a logarithmic curve that:</p>
+                <p>Points aren't linear. We use <strong>super-linear growth</strong> that rewards longer focus sessions:
+                </p>
                 <ul>
-                    <li><strong>Rewards early commitment:</strong> The first hour earns you more points per minute than
-                        the fifth hour</li>
-                    <li><strong>Diminishing returns:</strong> Sleeping for 8 hours doesn't earn 8x what a 1-hour session
-                        earns</li>
-                    <li><strong>Caps overnight:</strong> Streaks over ~8 hours are capped to prevent "sleep farming"
-                    </li>
+                    <li><strong>Sub-linear early:</strong> The first 10-60 minutes ramp up from 0.5 to 1.0 points per
+                        minute</li>
+                    <li><strong>Super-linear middle:</strong> From 1-4 hours, you earn 1.0 to 1.5 points per minute
+                        (peak efficiency)</li>
+                    <li><strong>Soft cap later:</strong> After 4 hours, growth slows to logarithmic (diminishing
+                        returns)</li>
                 </ul>
-                <p style="margin-top: 1rem;">This means multiple intentional 1-2 hour breaks during the day will often
-                    beat someone who just sleeps with their phone locked.</p>
+                <p style="margin-top: 1rem;"><strong>Key insight:</strong> One 60-minute session (60 pts) beats two
+                    30-minute sessions (23 + 23 = 46 pts). The whole is greater than the sum of its parts.</p>
             </section>
 
             <section class="privacy-section">
                 <h2>Example Scores</h2>
                 <div class="privacy-list">
                     <div class="privacy-item">
+                        <h3>10 minutes</h3>
+                        <p>~6 points (minimum threshold)</p>
+                    </div>
+                    <div class="privacy-item">
                         <h3>30 minutes</h3>
-                        <p>~15 points</p>
+                        <p>~23 points</p>
                     </div>
                     <div class="privacy-item">
                         <h3>1 hour</h3>
-                        <p>~25 points</p>
+                        <p>60 points (baseline: 1 pt/min)</p>
                     </div>
                     <div class="privacy-item">
                         <h3>2 hours</h3>
-                        <p>~40 points</p>
+                        <p>~140 points (1.17 pts/min)</p>
                     </div>
                     <div class="privacy-item">
                         <h3>4 hours</h3>
-                        <p>~55 points</p>
+                        <p>360 points (peak: 1.5 pts/min)</p>
                     </div>
                     <div class="privacy-item">
                         <h3>8 hours (sleep)</h3>
-                        <p>~70 points (capped)</p>
+                        <p>~442 points (soft capped)</p>
                     </div>
                 </div>
-                <p style="margin-top: 1rem; font-style: italic; color: var(--text-muted);">These are approximate values.
-                    The actual formula may be tuned over time.</p>
+                <p style="margin-top: 1rem; font-style: italic; color: var(--text-muted);">These are calculated from the
+                    actual scoring algorithm.</p>
             </section>
 
             <section class="privacy-section">
@@ -121,7 +126,8 @@
         </main>
 
         <footer>
-            <p>&copy; <span id="year"></span> Stifle. Less phone, more life. | <a href="index.html">Home</a></p>
+            <p>&copy; <span id="year"></span> Stifle. Less phone, more life. | <a href="faq.html">FAQ</a> | <a
+                    href="scoring.html">Scoring</a> | <a href="privacy.html">Privacy</a></p>
         </footer>
     </div>
 

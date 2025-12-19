@@ -242,7 +242,8 @@ export async function groupRoutes(app: FastifyInstance) {
       JOIN users u ON u.id = gm.user_id
       LEFT JOIN weekly_scores ws ON ws.user_id = u.id AND ws.week_start = $2
       WHERE gm.group_id = $1
-      ORDER BY total_points DESC, longest_streak DESC`,
+      ORDER BY total_points DESC, longest_streak DESC
+      LIMIT 50`,
             [id, weekStart]
         );
 

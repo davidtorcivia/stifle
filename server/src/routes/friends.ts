@@ -360,7 +360,8 @@ export async function friendsRoutes(app: FastifyInstance) {
             JOIN users u ON u.id = au.user_id
             LEFT JOIN weekly_scores ws ON ws.user_id = u.id 
                 AND ws.week_start = date_trunc('week', NOW())
-            ORDER BY COALESCE(ws.total_points, 0) DESC, u.username`,
+            ORDER BY COALESCE(ws.total_points, 0) DESC, u.username
+            LIMIT 50`,
             [userId]
         );
 
