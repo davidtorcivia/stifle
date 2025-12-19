@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How Scoring Works - Stifle</title>
+    <meta name="description" content="Learn how Stifle calculates points and rewards you for staying off your phone.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@400;500&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <script defer src="https://zerolens.disinfo.zone/script.js"
+        data-website-id="eb8ffbfb-9656-4310-9380-004340a9c958"></script>
+</head>
+
+<body>
+    <canvas id="bg-canvas"></canvas>
+    <div class="container">
+        <header class="page-header">
+            <a href="index.html" class="back-link">Back</a>
+            <h1 class="page-title">Scoring</h1>
+        </header>
+
+        <main class="content">
+            <section class="privacy-section">
+                <h2>The Philosophy</h2>
+                <p>Stifle's scoring system is designed to reward intentional breaks from your phone while making it
+                    impossible to game the system. You can't just sleep your way to the top.</p>
+            </section>
+
+            <section class="privacy-section">
+                <h2>The Basics</h2>
+                <div class="privacy-list">
+                    <div class="privacy-item">
+                        <h3>Lock Your Phone = Start a Streak</h3>
+                        <p>Every time you lock your phone, you begin a "streak." The timer starts counting.</p>
+                    </div>
+                    <div class="privacy-item">
+                        <h3>Minimum 10 Minutes</h3>
+                        <p>Streaks shorter than 10 minutes don't count. This prevents gaming the system by rapidly
+                            locking/unlocking.</p>
+                    </div>
+                    <div class="privacy-item">
+                        <h3>Unlock = End Streak, Earn Points</h3>
+                        <p>When you unlock your phone after 10+ minutes, your streak ends and you're awarded points
+                            based on how long you stayed away.</p>
+                    </div>
+                </div>
+            </section>
+
+            <section class="privacy-section">
+                <h2>The Curve</h2>
+                <p>Points aren't linear. We use a logarithmic curve that:</p>
+                <ul>
+                    <li><strong>Rewards early commitment:</strong> The first hour earns you more points per minute than
+                        the fifth hour</li>
+                    <li><strong>Diminishing returns:</strong> Sleeping for 8 hours doesn't earn 8x what a 1-hour session
+                        earns</li>
+                    <li><strong>Caps overnight:</strong> Streaks over ~8 hours are capped to prevent "sleep farming"
+                    </li>
+                </ul>
+                <p style="margin-top: 1rem;">This means multiple intentional 1-2 hour breaks during the day will often
+                    beat someone who just sleeps with their phone locked.</p>
+            </section>
+
+            <section class="privacy-section">
+                <h2>Example Scores</h2>
+                <div class="privacy-list">
+                    <div class="privacy-item">
+                        <h3>30 minutes</h3>
+                        <p>~15 points</p>
+                    </div>
+                    <div class="privacy-item">
+                        <h3>1 hour</h3>
+                        <p>~25 points</p>
+                    </div>
+                    <div class="privacy-item">
+                        <h3>2 hours</h3>
+                        <p>~40 points</p>
+                    </div>
+                    <div class="privacy-item">
+                        <h3>4 hours</h3>
+                        <p>~55 points</p>
+                    </div>
+                    <div class="privacy-item">
+                        <h3>8 hours (sleep)</h3>
+                        <p>~70 points (capped)</p>
+                    </div>
+                </div>
+                <p style="margin-top: 1rem; font-style: italic; color: var(--text-muted);">These are approximate values.
+                    The actual formula may be tuned over time.</p>
+            </section>
+
+            <section class="privacy-section">
+                <h2>Weekly Competition</h2>
+                <p>Scores reset every Monday at midnight in your timezone. This gives everyone a fresh start each week
+                    and keeps the competition fair.</p>
+                <p>You can compare your score against:</p>
+                <ul>
+                    <li>Your friends (leaderboard)</li>
+                    <li>Your personal best week</li>
+                    <li>Your average week</li>
+                    <li>Last week's performance</li>
+                </ul>
+            </section>
+
+            <section class="privacy-section">
+                <h2>Groups</h2>
+                <p>Create or join groups to compete with specific sets of friends. Each group has its own leaderboard.
+                    You can be in multiple groups at once.</p>
+            </section>
+
+            <section class="privacy-section">
+                <h2>Ghost Mode</h2>
+                <p>If you want to track your own progress without appearing on leaderboards, enable Ghost Mode in
+                    settings. Your friends will see you as "Anonymous" on the leaderboard.</p>
+            </section>
+        </main>
+
+        <footer>
+            <p>&copy; <span id="year"></span> Stifle. Less phone, more life. | <a href="index.html">Home</a></p>
+        </footer>
+    </div>
+
+    <script src="shader.js"></script>
+    <script>
+        document.getElementById('year').textContent = new Date().getFullYear();
+    </script>
+</body>
+
+</html>

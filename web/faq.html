@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FAQ - Stifle</title>
+    <meta name="description"
+        content="Frequently asked questions about Stifle, the app that helps you use your phone less.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@400;500&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <script defer src="https://zerolens.disinfo.zone/script.js"
+        data-website-id="eb8ffbfb-9656-4310-9380-004340a9c958"></script>
+</head>
+
+<body>
+    <canvas id="bg-canvas"></canvas>
+    <div class="container">
+        <header class="page-header">
+            <a href="index.html" class="back-link">Back</a>
+            <h1 class="page-title">FAQ</h1>
+        </header>
+
+        <main class="content">
+            <section class="privacy-section">
+                <h2>What is Stifle?</h2>
+                <p>Stifle is an app that helps you use your phone less by turning it into a game. Lock your phone, earn
+                    points. Compete with friends to see who can stay offline the longest.</p>
+            </section>
+
+            <section class="privacy-section">
+                <h2>How does it work?</h2>
+                <p>When you lock your phone, Stifle starts tracking your "streak." The longer you stay away from your
+                    phone, the more points you earn. Points are calculated using a curve that rewards longer sessions
+                    but prevents gaming the system by sleeping through it.</p>
+                <p><a href="scoring.html" style="color: var(--accent);">Learn more about scoring</a></p>
+            </section>
+
+            <section class="privacy-section">
+                <h2>Why does it need Accessibility permissions?</h2>
+                <p>Android restricts apps from detecting screen lock/unlock events in the background. The Accessibility
+                    Service permission allows Stifle to reliably detect when you lock and unlock your phone, even when
+                    other apps are running.</p>
+                <p><strong>We don't read any content on your screen.</strong> We only listen for the lock/unlock system
+                    events. Our code is open source so you can verify this yourself.</p>
+            </section>
+
+            <section class="privacy-section">
+                <h2>Is this available for iOS?</h2>
+                <p>Not yet. Apple's iOS is more restrictive about background processes and doesn't allow apps to detect
+                    screen lock events the way Android does. We're exploring workarounds, but no promises.</p>
+            </section>
+
+            <section class="privacy-section">
+                <h2>What data do you collect?</h2>
+                <p>Only the timestamps of when you lock and unlock your phone. We use this to calculate your streaks and
+                    points. We don't track which apps you use, what you type, your location, or anything else.</p>
+                <p><a href="privacy.html" style="color: var(--accent);">Read our full privacy policy</a></p>
+            </section>
+
+            <section class="privacy-section">
+                <h2>Can I use Stifle without friends?</h2>
+                <p>Yes. While the social competition features are a big part of Stifle, you can use it solo to track
+                    your own progress and compete against your past self.</p>
+            </section>
+
+            <section class="privacy-section">
+                <h2>What's a "streak"?</h2>
+                <p>A streak is a continuous period where your phone is locked. Every time you lock your phone and don't
+                    touch it for at least 10 minutes, that counts as a streak. Shorter periods don't count to prevent
+                    gaming the system.</p>
+            </section>
+
+            <section class="privacy-section">
+                <h2>How are weekly scores calculated?</h2>
+                <p>Your weekly score is the sum of all points earned from streaks during the week (Monday to Sunday in
+                    your timezone). At the start of each week, everyone's score resets to zero.</p>
+            </section>
+
+            <section class="privacy-section">
+                <h2>What happens to my data when I delete my account?</h2>
+                <p>Everything is permanently deleted. Your profile, all events, scores, group memberships, and settings
+                    are removed from our servers. This action is irreversible.</p>
+            </section>
+
+            <section class="privacy-section">
+                <h2>Is Stifle free?</h2>
+                <p>Yes. Stifle is completely free and open source. There are no ads, no premium tiers, and no in-app
+                    purchases.</p>
+            </section>
+
+            <section class="privacy-section">
+                <h2>How do I report a bug or request a feature?</h2>
+                <p>Open an issue on our <a href="https://github.com/davidtorcivia/stifle"
+                        style="color: var(--accent);">GitHub repository</a>. We welcome contributions from the
+                    community.</p>
+            </section>
+        </main>
+
+        <footer>
+            <p>&copy; <span id="year"></span> Stifle. Less phone, more life. | <a href="index.html">Home</a></p>
+        </footer>
+    </div>
+
+    <script src="shader.js"></script>
+    <script>
+        document.getElementById('year').textContent = new Date().getFullYear();
+    </script>
+</body>
+
+</html>
