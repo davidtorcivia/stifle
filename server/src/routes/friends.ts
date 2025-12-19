@@ -1,6 +1,7 @@
 import { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { db } from '../db/client.js';
+import { sendSocialNotification } from '../services/push.service.js';
 
 // Schema definitions
 const searchUsersSchema = z.object({
@@ -107,6 +108,21 @@ export async function friendsRoutes(app: FastifyInstance) {
                          WHERE id = $1`,
                         [existing.id]
                     );
+
+                    // Notify them that we accepted (via mutual request)
+                    const accepterResult = await db.query(
+                        'SELECT username FROM users WHERE id = $1',
+                        [requesterId]
+                    );
+                    const accepterUsername = accepterResult.rows[0]?.username || 'Someone';
+
+                    sendSocialNotification(
+                        addresseeId,
+                        'You\'re Now Friends!',
+                        `${accepterUsername} also sent you a request - you're now friends!`,
+                        { type: 'friend_accepted', userId: requesterId }
+                    ).catch(err => console.error('Failed to send mutual friend notification:', err));
+
                     return { message: 'Friend request accepted', status: 'accepted' };
                 }
                 // If WE already sent a request, just return pending
@@ -131,6 +147,21 @@ export async function friendsRoutes(app: FastifyInstance) {
              VALUES ($1, $2, 'pending')`,
             [requesterId, addresseeId]
         );
+
+        // Get requester's username for notification
+        const requesterResult = await db.query(
+            'SELECT username FROM users WHERE id = $1',
+            [requesterId]
+        );
+        const requesterUsername = requesterResult.rows[0]?.username || 'Someone';
+
+        // Send push notification to addressee
+        sendSocialNotification(
+            addresseeId,
+            'Friend Request',
+            `${requesterUsername} wants to be your friend`,
+            { type: 'friend_request', userId: requesterId }
+        ).catch(err => console.error('Failed to send friend request notification:', err));
 
         return { message: 'Friend request sent', status: 'pending' };
     });
@@ -209,6 +240,23 @@ export async function friendsRoutes(app: FastifyInstance) {
              WHERE id = $2`,
             [newStatus, id]
         );
+
+        // If accepted, notify the original requester
+        if (action === 'accept') {
+            const requesterId = requestResult.rows[0].requester_id;
+            const accepterResult = await db.query(
+                'SELECT username FROM users WHERE id = $1',
+                [userId]
+            );
+            const accepterUsername = accepterResult.rows[0]?.username || 'Someone';
+
+            sendSocialNotification(
+                requesterId,
+                'Friend Request Accepted',
+                `${accepterUsername} accepted your friend request`,
+                { type: 'friend_accepted', userId }
+            ).catch(err => console.error('Failed to send friend accepted notification:', err));
+        }
 
         return {
             message: action === 'accept' ? 'Friend request accepted' : 'Friend request declined',
