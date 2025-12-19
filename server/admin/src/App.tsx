@@ -8,6 +8,7 @@ import { Invites } from './pages/Invites';
 import { Settings } from './pages/Settings';
 import { Backups } from './pages/Backups';
 import { AuditLog } from './pages/AuditLog';
+import { Waitlist } from './pages/Waitlist';
 import { api } from './api/client';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -34,6 +35,7 @@ function App() {
         <Route path="users" element={<Users />} />
         <Route path="groups" element={<Groups />} />
         <Route path="invites" element={<Invites />} />
+        <Route path="waitlist" element={<Waitlist />} />
         <Route path="settings" element={<Settings />} />
         <Route path="backups" element={<Backups />} />
         <Route path="audit-log" element={<AuditLog />} />

@@ -139,12 +139,17 @@ export async function adminRoutes(app: FastifyInstance) {
             trackingStatusResult.rows.map(r => [r.tracking_status, parseInt(r.count)])
         );
 
+        // Waitlist count
+        const waitlistResult = await db.query('SELECT COUNT(*) as count FROM waitlist');
+        const waitlistCount = parseInt(waitlistResult.rows[0].count);
+
         return {
             totalUsers,
             activeUsers,
             eventsToday,
             totalGroups,
             pendingInvites,
+            waitlistCount,
             usersByPlatform,
             usersByTrackingStatus,
             recentSignups,
@@ -812,6 +817,60 @@ export async function adminRoutes(app: FastifyInstance) {
 
         await logAdminAction(adminId, 'backup.delete', 'backup', id, {
             filename: result.rows[0].filename,
+        }, getClientIp(request));
+
+        return { success: true };
+    });
+
+    // ============================================
+    // WAITLIST MANAGEMENT
+    // ============================================
+
+    app.get('/waitlist', { preHandler }, async (request) => {
+        const query = paginationSchema.parse(request.query);
+        const offset = (query.page - 1) * query.limit;
+
+        const countResult = await db.query('SELECT COUNT(*) as count FROM waitlist');
+        const total = parseInt(countResult.rows[0].count);
+
+        const result = await db.query(
+            `SELECT id, email, created_at
+             FROM waitlist
+             ORDER BY created_at DESC
+             LIMIT $1 OFFSET $2`,
+            [query.limit, offset]
+        );
+
+        return {
+            entries: result.rows.map(r => ({
+                id: r.id,
+                email: r.email,
+                createdAt: r.created_at,
+            })),
+            pagination: {
+                page: query.page,
+                limit: query.limit,
+                total,
+                totalPages: Math.ceil(total / query.limit),
+            },
+        };
+    });
+
+    app.delete('/waitlist/:id', { preHandler }, async (request, reply) => {
+        const { id } = request.params as { id: string };
+        const adminId = (request as any).user.id;
+
+        const result = await db.query(
+            'DELETE FROM waitlist WHERE id = $1 RETURNING email',
+            [id]
+        );
+
+        if (result.rowCount === 0) {
+            return reply.status(404).send({ error: 'Entry not found' });
+        }
+
+        await logAdminAction(adminId, 'waitlist.delete', 'waitlist', id, {
+            email: result.rows[0].email,
         }, getClientIp(request));
 
         return { success: true };

@@ -133,6 +133,10 @@ class ApiClient {
     logout() {
         this.setToken(null);
         localStorage.removeItem('refresh_token');
+        // Redirect to login page if not already there
+        if (window.location.pathname !== '/') {
+            window.location.href = '/';
+        }
     }
 
     // Admin endpoints
@@ -292,6 +296,24 @@ class ApiClient {
 
     async deleteBackup(id: string) {
         return this.delete<{ success: boolean }>(`/admin/backups/${id}`);
+    }
+
+    async getWaitlist(params: { page?: number; limit?: number }) {
+        const query = new URLSearchParams();
+        if (params.page) query.set('page', params.page.toString());
+        if (params.limit) query.set('limit', params.limit.toString());
+        return this.get<{
+            entries: Array<{
+                id: string;
+                email: string;
+                createdAt: string;
+            }>;
+            pagination: { page: number; limit: number; total: number; totalPages: number };
+        }>(`/admin/waitlist?${query}`);
+    }
+
+    async deleteWaitlistEntry(id: string) {
+        return this.delete<{ success: boolean }>(`/admin/waitlist/${id}`);
     }
 }
 

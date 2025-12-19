@@ -34,6 +34,10 @@ export function Layout() {
                         <span className="icon">✉</span>
                         Invites
                     </NavLink>
+                    <NavLink to="/waitlist" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
+                        <span className="icon">☷</span>
+                        Waitlist
+                    </NavLink>
                     <NavLink to="/settings" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
                         <span className="icon">⚙</span>
                         Settings

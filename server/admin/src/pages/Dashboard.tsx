@@ -7,6 +7,7 @@ interface DashboardData {
     eventsToday: number;
     totalGroups: number;
     pendingInvites: number;
+    waitlistCount: number;
     usersByPlatform: Record<string, number>;
     usersByTrackingStatus: Record<string, number>;
     recentSignups: Array<{ date: string; count: number }>;
@@ -73,6 +74,10 @@ export function Dashboard() {
                 <div className="stat-card">
                     <div className="label">Pending Invites</div>
                     <div className="value">{formatNumber(data.pendingInvites)}</div>
+                </div>
+                <div className="stat-card">
+                    <div className="label">Waitlist</div>
+                    <div className="value">{formatNumber(data.waitlistCount)}</div>
                 </div>
             </div>
 
