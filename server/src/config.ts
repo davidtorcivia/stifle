@@ -12,6 +12,8 @@ const envSchema = z.object({
     JWT_REFRESH_EXPIRES_IN: z.string().default('7d'),
     // Admin & Infrastructure
     API_DOMAIN: z.string().default('localhost:3000'),
+    // CORS origins (comma-separated for multiple, or '*' for all)
+    CORS_ORIGINS: z.string().optional(),
     BACKUP_DIR: z.string().default('./backups'),
     // SMTP (optional)
     SMTP_HOST: z.string().optional(),

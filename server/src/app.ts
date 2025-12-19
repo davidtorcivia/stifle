@@ -40,10 +40,19 @@ export async function buildApp() {
     });
 
     // Plugins
-    // CORS: allow all in dev, restrict in production
-    const corsOrigin = config.NODE_ENV === 'production'
-        ? ['https://stifle.app', 'https://admin.stifle.app', 'https://api.stifle.app']
-        : true;
+    // CORS: configurable via CORS_ORIGINS env (comma-separated), allow all in dev
+    let corsOrigin: boolean | string | string[];
+    if (config.CORS_ORIGINS) {
+        if (config.CORS_ORIGINS === '*') {
+            corsOrigin = true; // Allow all
+        } else {
+            corsOrigin = config.CORS_ORIGINS.split(',').map(o => o.trim());
+        }
+    } else {
+        // Default: allow all in dev, none in production (must be configured)
+        corsOrigin = config.NODE_ENV === 'production' ? false : true;
+    }
+
     await app.register(cors, {
         origin: corsOrigin,
         credentials: true,

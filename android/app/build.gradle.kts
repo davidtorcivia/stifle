@@ -21,11 +21,16 @@ android {
         vectorDrawables {
             useSupportLibrary = true
         }
-
-        buildConfigField("String", "API_BASE_URL", "\"http://10.0.2.2:3000\"")
     }
 
     buildTypes {
+        debug {
+            applicationIdSuffix = ".debug"
+            versionNameSuffix = "-debug"
+            isDebuggable = true
+            // Emulator localhost
+            buildConfigField("String", "API_BASE_URL", "\"http://10.0.2.2:3000\"")
+        }
         release {
             isMinifyEnabled = true
             isShrinkResources = true
@@ -33,7 +38,8 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            buildConfigField("String", "API_BASE_URL", "\"https://api.stifle.app\"")
+            // Production API
+            buildConfigField("String", "API_BASE_URL", "\"https://api.stifleapp.com\"")
         }
     }
 

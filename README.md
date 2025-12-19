@@ -122,14 +122,17 @@ volumes:
 ### Step 3: Deploy with Docker
 
 ```bash
-# Build and start all services
-docker-compose up -d --build
+# Build all services
+docker-compose build
 
-# Run migrations
-docker exec stifle-server npm run migrate
+# Run migrations FIRST (before starting the server)
+docker-compose run --rm server npm run migrate
 
 # Create initial admin user
-docker exec stifle-server npm run seed
+docker-compose run --rm server npm run seed
+
+# Now start all services
+docker-compose up -d
 
 # Check logs
 docker-compose logs -f server
@@ -229,17 +232,19 @@ server {
 
 ### Step 5: Android Release Build
 
-Update production API URL in `android/app/build.gradle.kts`:
+The app is configured with separate debug and release builds:
 
-```kotlin
-release {
-    buildConfigField("String", "API_BASE_URL", "\"https://api.stifle.app\"")
-}
-```
+| Build Type | API URL | Application ID | Command |
+|------------|---------|----------------|---------|
+| Debug | `http://10.0.2.2:3000` | `app.stifle.debug` | `./gradlew assembleDebug` |
+| Release | `https://api.stifleapp.com` | `app.stifle` | `./gradlew assembleRelease` |
 
-Create a release keystore (first time only):
+**Debug builds** can be installed alongside release builds since they have different application IDs.
+
+#### First Time: Create Release Keystore
 
 ```bash
+cd android
 keytool -genkey -v -keystore stifle-release.jks \
   -alias stifle -keyalg RSA -keysize 2048 -validity 10000
 ```
@@ -253,14 +258,19 @@ keyAlias=stifle
 storeFile=../stifle-release.jks
 ```
 
-Build signed release APK:
+#### Building
 
 ```bash
 cd android
-./gradlew assembleRelease
-```
 
-The APK will be at `android/app/build/outputs/apk/release/app-release.apk`.
+# Development build (connects to local server)
+./gradlew assembleDebug
+# Output: app/build/outputs/apk/debug/app-debug.apk
+
+# Production build (connects to api.stifleapp.com)
+./gradlew assembleRelease
+# Output: app/build/outputs/apk/release/app-release.apk
+```
 
 ### Step 6: Create Admin User
 
