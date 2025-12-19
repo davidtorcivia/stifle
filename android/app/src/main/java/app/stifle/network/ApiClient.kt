@@ -55,12 +55,16 @@ class ApiClient(private val tokenManager: TokenManager) {
                     val body = refreshResponse.body()!!
                     tokenManager.saveTokens(body.accessToken, body.refreshToken)
                     body.accessToken
-                } else {
-                    // Refresh failed - clear tokens (will force re-login)
+                } else if (refreshResponse.code() == 401 || refreshResponse.code() == 403) {
+                    // Only clear tokens on explicit rejection (invalid/expired refresh token)
                     tokenManager.clearTokens()
+                    null
+                } else {
+                    // Server error (5xx), rate limit, etc. - keep tokens, retry later
                     null
                 }
             } catch (e: Exception) {
+                // Network error - don't clear tokens, user might just be offline
                 null
             }
         }

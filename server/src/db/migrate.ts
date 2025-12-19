@@ -273,6 +273,19 @@ const migrations = [
         END $$;
       `,
   },
+  {
+    name: '007_waitlist',
+    sql: `
+        -- Waitlist for email signups
+        CREATE TABLE IF NOT EXISTS waitlist (
+          id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+          email VARCHAR(255) UNIQUE NOT NULL,
+          created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        );
+        
+        CREATE INDEX IF NOT EXISTS idx_waitlist_email ON waitlist(email);
+      `,
+  },
 ];
 
 async function migrate() {

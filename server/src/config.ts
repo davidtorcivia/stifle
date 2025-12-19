@@ -8,8 +8,8 @@ const envSchema = z.object({
     DATABASE_URL: z.string(),
     REDIS_URL: z.string(),
     JWT_SECRET: z.string().min(32),
-    JWT_EXPIRES_IN: z.string().default('1h'),
-    JWT_REFRESH_EXPIRES_IN: z.string().default('7d'),
+    JWT_EXPIRES_IN: z.string().default('7d'),   // Mobile apps need longer sessions
+    JWT_REFRESH_EXPIRES_IN: z.string().default('90d'), // 90 days for refresh
     // Admin & Infrastructure
     API_DOMAIN: z.string().default('localhost:3000'),
     // CORS origins (comma-separated for multiple, or '*' for all)

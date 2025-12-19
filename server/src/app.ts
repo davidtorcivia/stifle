@@ -10,6 +10,7 @@ import { userRoutes } from './routes/users.js';
 import { groupRoutes } from './routes/groups.js';
 import { friendsRoutes } from './routes/friends.js';
 import { adminRoutes } from './routes/admin.js';
+import { waitlistRoutes } from './routes/waitlist.js';
 
 export async function buildApp() {
     const app = Fastify({
@@ -91,6 +92,7 @@ export async function buildApp() {
     await app.register(groupRoutes, { prefix: '/groups' });
     await app.register(friendsRoutes, { prefix: '/friends' });
     await app.register(adminRoutes, { prefix: '/admin' });
+    await app.register(waitlistRoutes, { prefix: '/api/waitlist' });
 
     return app;
 }

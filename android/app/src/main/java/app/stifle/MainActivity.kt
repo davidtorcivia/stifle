@@ -26,6 +26,7 @@ class MainActivity : ComponentActivity() {
             val isLoggedIn by app.container.tokenManager.isLoggedInFlow().collectAsState(initial = null)
             val themeMode by app.container.tokenManager.getThemeModeFlow().collectAsState(initial = "system")
             val hasCompletedOnboarding by app.container.tokenManager.hasCompletedOnboardingFlow().collectAsState(initial = null)
+            val hasEverLoggedIn by app.container.tokenManager.hasEverLoggedInFlow().collectAsState(initial = false)
             
             StifleTheme(themeMode = themeMode) {
                 // Show loading while checking auth state
@@ -66,12 +67,12 @@ class MainActivity : ComponentActivity() {
                             }
                             
                             // Determine start destination
-                            // Flow: Onboarding -> Register -> Login -> Home
+                            // Flow: Onboarding -> Register/Login -> Home
                             val startDestination = when {
                                 // New user: show onboarding first
                                 hasCompletedOnboarding != true -> "onboarding"
-                                // After onboarding, not logged in: show register (new users)
-                                isLoggedIn != true -> "register"
+                                // After onboarding, not logged in: show login if returning, register if new
+                                isLoggedIn != true -> if (hasEverLoggedIn) "login" else "register"
                                 // Logged in with join code: go to groups
                                 joinCode != null -> "groups?code=$joinCode"
                                 // Logged in: go home

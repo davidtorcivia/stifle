@@ -39,6 +39,7 @@ class TokenManager(private val context: Context) {
         
         private val THEME_MODE = stringPreferencesKey("theme_mode")
         private val ONBOARDING_COMPLETE = stringPreferencesKey("onboarding_complete")
+        private val HAS_EVER_LOGGED_IN = stringPreferencesKey("has_ever_logged_in")
     }
     
     private var cachedKey: SecretKey? = null
@@ -104,6 +105,7 @@ class TokenManager(private val context: Context) {
         context.dataStore.edit { settings ->
             settings[ACCESS_TOKEN] = encryptedAccess
             settings[REFRESH_TOKEN] = encryptedRefresh
+            settings[HAS_EVER_LOGGED_IN] = "true" // Remember user has logged in
         }
     }
     
@@ -213,5 +215,16 @@ class TokenManager(private val context: Context) {
         context.dataStore.edit { settings ->
             settings[ONBOARDING_COMPLETE] = "true"
         }
+    }
+    
+    // Has ever logged in - persists even after logout
+    fun hasEverLoggedInFlow(): Flow<Boolean> {
+        return context.dataStore.data.map { prefs ->
+            prefs[HAS_EVER_LOGGED_IN] == "true"
+        }
+    }
+    
+    suspend fun hasEverLoggedIn(): Boolean {
+        return context.dataStore.data.first()[HAS_EVER_LOGGED_IN] == "true"
     }
 }
