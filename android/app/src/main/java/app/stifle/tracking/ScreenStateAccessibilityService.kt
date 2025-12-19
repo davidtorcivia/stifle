@@ -18,15 +18,18 @@ class ScreenStateAccessibilityService : AccessibilityService() {
 
     override fun onServiceConnected() {
         super.onServiceConnected()
-        Log.d("StifleAccessibility", "Service connected")
+        Log.d("StifleAccessibility", "Service connected - registering screen state receiver")
         
         // Dynamically register the receiver to ensure we catch SCREEN_OFF/USER_PRESENT
         // even on modern Android versions where Manifest registration is ignored.
+        // We also listen for SCREEN_ON as a backup signal.
         val filter = android.content.IntentFilter().apply {
             addAction(android.content.Intent.ACTION_SCREEN_OFF)
+            addAction(android.content.Intent.ACTION_SCREEN_ON)
             addAction(android.content.Intent.ACTION_USER_PRESENT)
         }
         registerReceiver(screenStateReceiver, filter)
+        Log.d("StifleAccessibility", "Screen state receiver registered successfully")
     }
 
     override fun onDestroy() {

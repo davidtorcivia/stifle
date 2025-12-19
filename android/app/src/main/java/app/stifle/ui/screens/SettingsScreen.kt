@@ -457,15 +457,24 @@ fun SettingsScreen(
                                val response = usersApi.exportData()
                                if (response.isSuccessful) {
                                    val data = response.body()
-                                   // Copy JSON to clipboard
-                                   val json = data?.toString() ?: "{}"
-                                   clipboardManager.setText(AnnotatedString(json))
-                                   snackbarMessage = "Data copied to clipboard"
+                                   // Convert to pretty JSON and save to Downloads
+                                   val gson = com.google.gson.GsonBuilder().setPrettyPrinting().create()
+                                   val json = gson.toJson(data)
+                                   
+                                   // Save to Downloads folder
+                                   val timestamp = java.text.SimpleDateFormat("yyyyMMdd_HHmmss", java.util.Locale.US).format(java.util.Date())
+                                   val filename = "stifle_export_$timestamp.json"
+                                   
+                                   val downloadsDir = android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOWNLOADS)
+                                   val file = java.io.File(downloadsDir, filename)
+                                   file.writeText(json)
+                                   
+                                   snackbarMessage = "Data saved to Downloads/$filename"
                                } else {
                                    snackbarMessage = "Failed to export data"
                                }
-                           } catch (_: Exception) {
-                               snackbarMessage = "Error exporting data"
+                           } catch (e: Exception) {
+                               snackbarMessage = "Error exporting data: ${e.message}"
                            }
                            isExporting = false
                        }
@@ -474,7 +483,7 @@ fun SettingsScreen(
                 ) {
                     Column {
                         Text("Export My Data", style = MaterialTheme.typography.bodyLarge)
-                        Text("Download all your data as JSON", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("Save all your data as JSON to Downloads", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                     if (isExporting) {
                         CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
