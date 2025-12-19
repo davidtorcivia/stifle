@@ -110,12 +110,34 @@ export async function userRoutes(app: FastifyInstance) {
 
         const weeklyPoints = weekResult.rows[0]?.total_points || 0;
 
-        // Get today's streak count
+        // Get today's SCORING streak count (only streaks 10+ minutes)
         const todayResult = await db.query(
-            `SELECT COUNT(*) as count FROM events
-             WHERE user_id = $1 
-               AND event_type = 'unlock'
-               AND timestamp >= date_trunc('day', NOW())`,
+            `WITH today_unlocks AS (
+                SELECT id, timestamp as unlock_time
+                FROM events
+                WHERE user_id = $1 
+                  AND event_type = 'unlock'
+                  AND timestamp >= date_trunc('day', NOW())
+            ),
+            unlock_with_lock AS (
+                SELECT 
+                    tu.id,
+                    tu.unlock_time,
+                    (
+                        SELECT e.timestamp 
+                        FROM events e 
+                        WHERE e.user_id = $1 
+                          AND e.event_type = 'lock' 
+                          AND e.timestamp < tu.unlock_time
+                        ORDER BY e.timestamp DESC 
+                        LIMIT 1
+                    ) as lock_time
+                FROM today_unlocks tu
+            )
+            SELECT COUNT(*) as count 
+            FROM unlock_with_lock
+            WHERE lock_time IS NOT NULL
+              AND EXTRACT(EPOCH FROM (unlock_time - lock_time)) >= 600`,
             [userId]
         );
         const todayStreakCount = parseInt(todayResult.rows[0]?.count || '0');
