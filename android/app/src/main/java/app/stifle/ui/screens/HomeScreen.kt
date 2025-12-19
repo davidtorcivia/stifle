@@ -232,17 +232,6 @@ fun HomeScreen(
             
             Divider(color = MaterialTheme.colorScheme.outlineVariant)
             
-            // Last Streak Info (if exists and not currently in streak)
-            if (!isInStreak && stats?.lastStreak != null) {
-                Spacer(modifier = Modifier.height(24.dp))
-                val last = stats!!.lastStreak!!
-                Text(
-                    text = "Last: ${formatDuration(last.durationSeconds)} (+${String.format("%.0f", last.pointsEarned)})",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.primary
-                )
-            }
-            
             // Weekly Summary Card (ghost comparisons)
             weeklySummary?.let { summary ->
                 Spacer(modifier = Modifier.height(20.dp))
@@ -266,58 +255,6 @@ fun HomeScreen(
     }
 }
 
-@Composable
-private fun LastStreakCard(lastStreak: LastStreak) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.secondaryContainer
-        )
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(20.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(
-                text = "Last Streak",
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSecondaryContainer
-            )
-            
-            Spacer(modifier = Modifier.height(8.dp))
-            
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly
-            ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(
-                        text = formatDuration(lastStreak.durationSeconds),
-                        style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSecondaryContainer
-                    )
-                    Text(
-                        text = "duration",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.7f)
-                    )
-                }
-                
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(
-                        text = "+${String.format("%.1f", lastStreak.pointsEarned)}",
-                        style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSecondaryContainer
-                    )
-                    Text(
-                        text = "points",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.7f)
-                    )
                 }
             }
             
