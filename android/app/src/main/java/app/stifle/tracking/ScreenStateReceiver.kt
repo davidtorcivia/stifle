@@ -15,19 +15,19 @@ import kotlinx.coroutines.launch
  * This is the core tracking mechanism for Android.
  * 
  * ACTION_USER_PRESENT: Fired when user unlocks the device (after PIN/biometric)
- * ACTION_SCREEN_ON: Fired when screen turns on (before unlock) - backup signal
- * ACTION_SCREEN_OFF: Fired when screen turns off (may include timeout lock)
+ * ACTION_SCREEN_ON: Fired when screen turns on (before unlock) - we ignore this
+ * ACTION_SCREEN_OFF: Fired when screen turns off
  * 
- * We record unlock on USER_PRESENT (preferred) or SCREEN_ON (backup).
- * To avoid duplicate unlocks, we track if we've recorded an unlock since last lock.
+ * IMPORTANT: We only record a LOCK if the user actually unlocked first.
+ * This prevents recording "glance at lock screen" as a lock event.
  */
 class ScreenStateReceiver : BroadcastReceiver() {
     
     // Use SupervisorJob so one failure doesn't cancel other operations
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
     
-    // Track if we've already recorded an unlock since the last lock
-    // This prevents duplicate unlock events from SCREEN_ON + USER_PRESENT
+    // Track if user has unlocked since last lock - prevents recording
+    // SCREEN_OFF events when user just glanced at lock screen without unlocking
     @Volatile
     private var hasUnlockedSinceLock = false
     
@@ -42,7 +42,7 @@ class ScreenStateReceiver : BroadcastReceiver() {
         
         when (intent.action) {
             Intent.ACTION_USER_PRESENT -> {
-                // User unlocked the device (after PIN/biometric) - PREFERRED
+                // User unlocked the device (after PIN/biometric)
                 if (!hasUnlockedSinceLock) {
                     hasUnlockedSinceLock = true
                     Log.d("ScreenStateReceiver", "Recording UNLOCK (USER_PRESENT)")
@@ -60,32 +60,29 @@ class ScreenStateReceiver : BroadcastReceiver() {
             }
             
             Intent.ACTION_SCREEN_ON -> {
-                // Screen turned on - BACKUP for when USER_PRESENT doesn't fire
-                // We'll wait a bit and record if USER_PRESENT doesn't fire
-                Log.d("ScreenStateReceiver", "SCREEN_ON detected - will wait for USER_PRESENT")
-                // Note: We don't record here immediately, USER_PRESENT should follow
-                // If USER_PRESENT never fires, the next SCREEN_OFF will have no matching unlock
+                // Screen turned on - just logging, we wait for USER_PRESENT
+                Log.d("ScreenStateReceiver", "SCREEN_ON detected - waiting for USER_PRESENT")
             }
             
             Intent.ACTION_SCREEN_OFF -> {
-                // Screen turned off (locked)
-                Log.d("ScreenStateReceiver", "Recording LOCK (SCREEN_OFF)")
-                
-                // If we didn't get an unlock since last lock, it means we missed it
-                if (!hasUnlockedSinceLock) {
-                    Log.w("ScreenStateReceiver", "WARNING: Consecutive lock without unlock - may have missed an unlock event")
-                }
-                
-                hasUnlockedSinceLock = false
-                scope.launch {
-                    try {
-                        eventRepository.recordLock("automatic")
-                        SyncWorker.enqueue(context)
-                    } catch (e: Exception) {
-                        Log.e("ScreenStateReceiver", "Failed to record lock", e)
+                // Screen turned off - only record LOCK if user actually unlocked
+                if (hasUnlockedSinceLock) {
+                    Log.d("ScreenStateReceiver", "Recording LOCK (SCREEN_OFF after unlock)")
+                    hasUnlockedSinceLock = false
+                    scope.launch {
+                        try {
+                            eventRepository.recordLock("automatic")
+                            SyncWorker.enqueue(context)
+                        } catch (e: Exception) {
+                            Log.e("ScreenStateReceiver", "Failed to record lock", e)
+                        }
                     }
+                } else {
+                    // User just glanced at lock screen without unlocking - ignore
+                    Log.d("ScreenStateReceiver", "Ignoring SCREEN_OFF - no unlock preceded this")
                 }
             }
         }
     }
 }
+
