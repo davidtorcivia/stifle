@@ -13,10 +13,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.background
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import app.stifle.data.repository.AuthRepository
 import app.stifle.data.repository.EventRepository
 import app.stifle.network.LastStreak
@@ -79,8 +82,39 @@ fun HomeScreen(
                 if (response.isSuccessful) {
                     stats = response.body()
                 }
+                // Also refresh weekly summary
+                val summaryResponse = usersApi.getWeeklySummary()
+                if (summaryResponse.isSuccessful) {
+                    weeklySummary = summaryResponse.body()
+                }
             } catch (_: Exception) {}
             isRefreshing = false
+        }
+    }
+    
+    // Auto-refresh when app comes back to foreground
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                // Refresh stats when app resumes
+                scope.launch {
+                    try {
+                        val response = usersApi.getStats()
+                        if (response.isSuccessful) {
+                            stats = response.body()
+                        }
+                        val summaryResponse = usersApi.getWeeklySummary()
+                        if (summaryResponse.isSuccessful) {
+                            weeklySummary = summaryResponse.body()
+                        }
+                    } catch (_: Exception) {}
+                }
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
         }
     }
     
